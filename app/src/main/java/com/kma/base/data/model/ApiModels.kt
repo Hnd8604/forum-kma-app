@@ -130,7 +130,7 @@ data class UserResponse(
 
 // Post Models - UPDATED with resourceUrls (array)
 data class PostResponse(
-    @SerializedName("id")
+    @SerializedName("postId")
     val id: String,
 
     @SerializedName("title")
@@ -144,6 +144,9 @@ data class PostResponse(
 
     @SerializedName("authorName")
     val authorName: String? = null,
+
+    @SerializedName("authorAvatarUrl")
+    val authorAvatarUrl: String? = null,
 
     @SerializedName("groupId")
     val groupId: String? = null,
@@ -159,6 +162,12 @@ data class PostResponse(
 
     @SerializedName("resourceUrls")  // Array of URLs
     val resourceUrls: List<String>? = null,
+
+    @SerializedName("reactionCount")
+    val reactionCount: Int = 0,
+
+    @SerializedName("commentCount")
+    val commentCount: Long = 0,
 
     @SerializedName("createdAt")
     val createdAt: String,

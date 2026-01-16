@@ -199,7 +199,9 @@ private fun ProfileContent(
                     items(state.posts) { post ->
                         ProfilePostItem(
                             post = post,
-                            onClick = { onNavigateToPost(post.id) }
+                            onClick = { onNavigateToPost(post.id) },
+                            onLikeClick = { /* TODO: Implement like */ },
+                            onCommentClick = { onNavigateToPost(post.id) }
                         )
                     }
                 }
@@ -574,43 +576,227 @@ private fun AboutInfoRow(
 @Composable
 private fun ProfilePostItem(
     post: PostResponse,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onLikeClick: () -> Unit = {},
+    onCommentClick: () -> Unit = {}
 ) {
+    val PrimaryBlue = Color(0xFF1877F2)
+    val DarkGray = Color(0xFF65676B)
+    
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 8.dp, vertical = 4.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
+        shape = RoundedCornerShape(8.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface
         )
     ) {
         Column(
-            modifier = Modifier.padding(16.dp)
+            modifier = Modifier.padding(12.dp)
         ) {
-            Text(
-                text = post.title,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
-            )
+            // Author row
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Avatar
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryBlue),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (!post.authorAvatarUrl.isNullOrBlank()) {
+                        AsyncImage(
+                            model = post.authorAvatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = (post.authorName?.firstOrNull() ?: "U").toString().uppercase(),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(12.dp))
+                
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = post.authorName ?: "Unknown",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 14.sp
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = formatDateTime(post.createdAt),
+                            color = DarkGray,
+                            fontSize = 12.sp
+                        )
+                        if (post.groupName != null) {
+                            Text(" • ", color = DarkGray, fontSize = 12.sp)
+                            Text(
+                                text = post.groupName,
+                                color = PrimaryBlue,
+                                fontSize = 12.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+                
+                IconButton(onClick = { /* More options */ }) {
+                    Icon(Icons.Default.MoreVert, contentDescription = "More")
+                }
+            }
+            
             Spacer(modifier = Modifier.height(8.dp))
+            
+            // Title
+            if (post.title.isNotBlank()) {
+                Text(
+                    text = post.title,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            
+            // Content
             Text(
                 text = post.content,
                 fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 3,
+                maxLines = 5,
                 overflow = TextOverflow.Ellipsis
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = formatDateTime(post.createdAt),
-                fontSize = 12.sp,
-                color = MaterialTheme.colorScheme.outline
-            )
+            
+            // Media - Images
+            if (!post.resourceUrls.isNullOrEmpty() && post.type == "IMAGE") {
+                Spacer(modifier = Modifier.height(8.dp))
+                AsyncImage(
+                    model = post.resourceUrls.first(),
+                    contentDescription = "Post image",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 300.dp)
+                        .clip(RoundedCornerShape(8.dp)),
+                    contentScale = ContentScale.Crop
+                )
+                if (post.resourceUrls.size > 1) {
+                    Text(
+                        text = "+${post.resourceUrls.size - 1} ảnh khác",
+                        color = PrimaryBlue,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+            }
+            
+            // Media - Video
+            if (!post.resourceUrls.isNullOrEmpty() && post.type == "VIDEO") {
+                Spacer(modifier = Modifier.height(8.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.Black),
+                    contentAlignment = Alignment.Center
+                ) {
+                    AsyncImage(
+                        model = post.resourceUrls.first(),
+                        contentDescription = "Video",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(Color.Black.copy(alpha = 0.6f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.PlayArrow,
+                            contentDescription = "Play video",
+                            tint = Color.White,
+                            modifier = Modifier.size(32.dp)
+                        )
+                    }
+                }
+            }
+            
+            // Stats row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Likes
+                if (post.reactionCount > 0) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.ThumbUp,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = PrimaryBlue
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "${post.reactionCount}",
+                            color = DarkGray,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+                
+                // Comments
+                if (post.commentCount > 0) {
+                    Text(
+                        text = "${post.commentCount} bình luận",
+                        color = DarkGray,
+                        fontSize = 12.sp
+                    )
+                }
+            }
+            
+            HorizontalDivider()
+            
+            // Action buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                // Like button
+                TextButton(onClick = onLikeClick) {
+                    Icon(
+                        imageVector = Icons.Default.ThumbUp,
+                        contentDescription = "Like",
+                        tint = DarkGray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Thích", color = DarkGray)
+                }
+                
+                // Comment button
+                TextButton(onClick = onCommentClick) {
+                    Icon(
+                        Icons.Default.Edit,
+                        contentDescription = "Comment",
+                        tint = DarkGray
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Bình luận", color = DarkGray)
+                }
+            }
         }
     }
 }
@@ -625,7 +811,7 @@ private fun FriendItem(
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Avatar placeholder
+        // Avatar
         Box(
             modifier = Modifier
                 .size(48.dp)
@@ -633,28 +819,39 @@ private fun FriendItem(
                 .background(MaterialTheme.colorScheme.primaryContainer),
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                imageVector = Icons.Default.Person,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                modifier = Modifier.size(28.dp)
-            )
+            if (!friend.avatarUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = friend.avatarUrl,
+                    contentDescription = "Avatar",
+                    modifier = Modifier.fillMaxSize(),
+                    contentScale = ContentScale.Crop
+                )
+            } else {
+                val initials = if (!friend.firstName.isNullOrBlank() && !friend.lastName.isNullOrBlank()) {
+                    "${friend.lastName.first()}${friend.firstName.first()}".uppercase()
+                } else {
+                    friend.username.take(2).uppercase()
+                }
+                Text(
+                    text = initials,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         
         Spacer(modifier = Modifier.width(12.dp))
         
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = friend.friendId,
+                text = friend.fullName,
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Medium,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = when (friend.status) {
-                    "ACCEPTED" -> "Bạn bè"
-                    else -> friend.status
-                },
+                text = "@${friend.username}",
                 fontSize = 12.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

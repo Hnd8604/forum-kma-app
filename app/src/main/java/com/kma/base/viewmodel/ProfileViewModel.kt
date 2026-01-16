@@ -1,5 +1,6 @@
 package com.kma.base.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.base.data.model.FriendResponse
@@ -8,6 +9,8 @@ import com.kma.base.data.model.UserResponse
 import com.kma.base.data.network.NetworkModule
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+
+private const val TAG = "ProfileViewModel"
 
 enum class ProfileTab {
     ABOUT, POSTS, FRIENDS
@@ -139,22 +142,29 @@ class ProfileViewModel : ViewModel() {
     private fun loadUserPosts(userId: String) {
         viewModelScope.launch {
             _state.update { it.copy(isLoadingPosts = true) }
+            Log.d(TAG, "Loading posts for user: $userId")
             
             try {
                 val response = postApi.getPostsByAuthor(userId, page = 0, limit = 20)
+                Log.d(TAG, "Posts response code: ${response.code}, message: ${response.message}")
                 if (response.code == "200" && response.result != null) {
                     val posts = response.result.content
+                    // Use content.size if total is 0 (backend bug workaround)
+                    val postCount = if (response.result.total > 0) response.result.total.toInt() else posts.size
+                    Log.d(TAG, "Loaded ${posts.size} posts, total from API: ${response.result.total}, using count: $postCount")
                     _state.update {
                         it.copy(
                             posts = posts,
-                            postCount = response.result.total.toInt(),
+                            postCount = postCount,
                             isLoadingPosts = false
                         )
                     }
                 } else {
+                    Log.w(TAG, "Posts response failed: ${response.message}")
                     _state.update { it.copy(isLoadingPosts = false) }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error loading posts", e)
                 _state.update { it.copy(isLoadingPosts = false) }
             }
         }
@@ -166,21 +176,28 @@ class ProfileViewModel : ViewModel() {
     private fun loadFriends() {
         viewModelScope.launch {
             _state.update { it.copy(isLoadingFriends = true) }
+            Log.d(TAG, "Loading friends list")
             
             try {
-                val response = friendApi.getFriends(page = 0, size = 50)
+                val response = friendApi.getFriends()
+                Log.d(TAG, "Friends response code: ${response.code}, message: ${response.message}")
                 if (response.code == "200" && response.result != null) {
+                    Log.d(TAG, "Loaded ${response.result.size} friends total")
+                    val friends = response.result.filter { it.status == "ACCEPTED" }
+                    Log.d(TAG, "Filtered ${friends.size} accepted friends")
                     _state.update {
                         it.copy(
-                            friends = response.result.content,
-                            friendCount = response.result.total.toInt(),
+                            friends = friends,
+                            friendCount = friends.size,
                             isLoadingFriends = false
                         )
                     }
                 } else {
+                    Log.w(TAG, "Friends response failed: ${response.message}")
                     _state.update { it.copy(isLoadingFriends = false) }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error loading friends", e)
                 _state.update { it.copy(isLoadingFriends = false) }
             }
         }

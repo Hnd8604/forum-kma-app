@@ -10,7 +10,7 @@ enum class FriendshipStatus {
     BLOCKED     // Đã chặn
 }
 
-// Friend Response
+// Friend Response - matches backend FriendshipResponse
 data class FriendResponse(
     @SerializedName("id")
     val id: String,
@@ -18,23 +18,45 @@ data class FriendResponse(
     @SerializedName("userId")
     val userId: String,
 
-    @SerializedName("friendId")
-    val friendId: String,
+    @SerializedName("username")
+    val username: String,
+
+    @SerializedName("email")
+    val email: String? = null,
+
+    @SerializedName("firstName")
+    val firstName: String? = null,
+
+    @SerializedName("lastName")
+    val lastName: String? = null,
+
+    @SerializedName("avatarUrl")
+    val avatarUrl: String? = null,
 
     @SerializedName("status")
     val status: String,
 
     @SerializedName("createdAt")
-    val createdAt: String,
+    val createdAt: String? = null,
 
-    @SerializedName("updatedAt")
-    val updatedAt: String? = null
+    @SerializedName("acceptedAt")
+    val acceptedAt: String? = null,
+
+    @SerializedName("isRequester")
+    val isRequester: Boolean? = null
 ) {
     val friendshipStatus: FriendshipStatus?
         get() = try {
             FriendshipStatus.valueOf(status)
         } catch (e: Exception) {
             null
+        }
+
+    val fullName: String
+        get() = if (!firstName.isNullOrBlank() && !lastName.isNullOrBlank()) {
+            "$lastName $firstName"
+        } else {
+            username
         }
 }
 

@@ -129,8 +129,7 @@ fun HomeScreen(
                             post = post,
                             onClick = { onPostClick(post.id) },
                             onLikeClick = { viewModel.toggleLike(post.id, post.userReaction != null) },
-                            onCommentClick = { onPostClick(post.id) },
-                            onShareClick = { /* Share */ }
+                            onCommentClick = { onPostClick(post.id) }
                         )
                     }
                     
@@ -253,8 +252,7 @@ private fun PostItem(
     post: PostWithInteractionResponse,
     onClick: () -> Unit,
     onLikeClick: () -> Unit,
-    onCommentClick: () -> Unit,
-    onShareClick: () -> Unit
+    onCommentClick: () -> Unit
 ) {
     Card(
         modifier = Modifier
@@ -424,17 +422,6 @@ private fun PostItem(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Bình luận", color = DarkGray)
-                }
-                
-                // Share button
-                TextButton(onClick = onShareClick) {
-                    Icon(
-                        Icons.Default.Share,
-                        contentDescription = "Share",
-                        tint = DarkGray
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Chia sẻ", color = DarkGray)
                 }
             }
         }

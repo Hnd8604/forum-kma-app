@@ -1,5 +1,6 @@
 package com.kma.base.data.api
 
+import com.google.gson.annotations.SerializedName
 import com.kma.base.data.model.*
 import retrofit2.http.*
 
@@ -159,29 +160,44 @@ interface GroupApiService {
 
 interface FriendApiService {
     @GET("friends")
-    suspend fun getFriends(
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20
-    ): ApiResponse<PageResponse<FriendResponse>>
+    suspend fun getFriends(): ApiResponse<List<FriendResponse>>
     
-    @GET("friends/requests")
-    suspend fun getFriendRequests(
-        @Query("page") page: Int = 0,
-        @Query("size") size: Int = 20
-    ): ApiResponse<PageResponse<FriendRequestResponse>>
+    @GET("friends/requests/received")
+    suspend fun getFriendRequests(): ApiResponse<List<FriendResponse>>
     
-    @POST("friends/request")
-    suspend fun sendFriendRequest(@Body request: Map<String, String>): ApiResponse<Any>
+    @GET("friends/requests/sent")
+    suspend fun getSentFriendRequests(): ApiResponse<List<FriendResponse>>
     
-    @POST("friends/accept/{requestId}")
-    suspend fun acceptFriendRequest(@Path("requestId") requestId: String): ApiResponse<Any>
+    @POST("friends/request/{userId}")
+    suspend fun sendFriendRequest(@Path("userId") userId: String): ApiResponse<FriendResponse>
     
-    @POST("friends/reject/{requestId}")
-    suspend fun rejectFriendRequest(@Path("requestId") requestId: String): ApiResponse<Any>
+    @POST("friends/accept/{friendshipId}")
+    suspend fun acceptFriendRequest(@Path("friendshipId") friendshipId: String): ApiResponse<FriendResponse>
     
-    @DELETE("friends/{friendId}")
-    suspend fun removeFriend(@Path("friendId") friendId: String): ApiResponse<Any>
+    @POST("friends/reject/{friendshipId}")
+    suspend fun rejectFriendRequest(@Path("friendshipId") friendshipId: String): ApiResponse<Any>
+    
+    @DELETE("friends/{userId}")
+    suspend fun removeFriend(@Path("userId") userId: String): ApiResponse<Any>
+    
+    @GET("friends/status/{userId}")
+    suspend fun checkFriendshipStatus(@Path("userId") userId: String): ApiResponse<FriendshipStatusResponse>
+    
+    @GET("friends/suggestions")
+    suspend fun getSuggestedUsers(@Query("limit") limit: Int = 5): ApiResponse<List<FriendResponse>>
 }
+
+// Friendship Status Response
+data class FriendshipStatusResponse(
+    @SerializedName("status")
+    val status: String,  // NONE, PENDING, ACCEPTED, BLOCKED
+    
+    @SerializedName("friendshipId")
+    val friendshipId: String? = null,
+    
+    @SerializedName("isRequester")
+    val isRequester: Boolean? = null
+)
 
 interface NotificationApiService {
     @GET("notifications")
