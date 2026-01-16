@@ -1,448 +1,303 @@
-# Android Base Project - Hướng Dẫn Tùy Chỉnh
+# Forum KMA - Android App
 
-## Mục Lục
-- [Giới Thiệu](#giới-thiệu)
-- [Cấu Trúc Dự Án](#cấu-trúc-dự-án)
-- [Tùy Chỉnh Logo và Splash Screen](#tùy-chỉnh-logo-và-splash-screen)
-- [Tùy Chỉnh Theme và Màu Sắc](#tùy-chỉnh-theme-và-màu-sắc)
-- [Tùy Chỉnh Navigation](#tùy-chỉnh-navigation)
-- [Tùy Chỉnh Onboarding](#tùy-chỉnh-onboarding)
-- [Thêm Màn Hình Mới](#thêm-màn-hình-mới)
-- [Build và Deploy](#build-và-deploy)
+<p align="center">
+  <img src="app/src/main/res/drawable/applogo2.png" width="120" alt="Forum KMA Logo">
+</p>
 
----
+<p align="center">
+  <strong>Ứng dụng mạng xã hội dành cho sinh viên Học viện Kỹ thuật Mật mã (KMA)</strong>
+</p>
 
-## Giới Thiệu
-
-Đây là project Android base sử dụng:
-- **Jetpack Compose** - UI hiện đại
-- **Material Design 3** - Design system
-- **Navigation Compose** - Điều hướng
-- **Splash Screen API** - Màn hình khởi động
-- **SharedPreferences** - Lưu trữ cài đặt
-
-Dự án đã có sẵn:
-- ✅ Splash Screen với animation
-- ✅ Onboarding Screen (3 trang)
-- ✅ Bottom Navigation (Home, Profile, Settings)
-- ✅ Theme System (Light/Dark/Follow System)
-- ✅ Responsive UI
+<p align="center">
+  <a href="#tính-năng">Tính năng</a> •
+  <a href="#công-nghệ">Công nghệ</a> •
+  <a href="#cài-đặt">Cài đặt</a> •
+  <a href="#cấu-trúc-dự-án">Cấu trúc</a> •
+  <a href="#api-endpoints">API</a>
+</p>
 
 ---
 
-## Cấu Trúc Dự Án
+## 📱 Giới Thiệu
+
+Forum KMA là ứng dụng Android dành cho sinh viên Học viện Kỹ thuật Mật mã, cho phép người dùng:
+- Chia sẻ bài viết, hình ảnh
+- Nhắn tin trực tiếp với bạn bè
+- Tương tác với cộng đồng KMA
+- Quản lý profile cá nhân
+
+---
+
+## ✨ Tính Năng
+
+### 🏠 Trang Chủ (Feed)
+- Xem danh sách bài viết của cộng đồng
+- Like và bình luận bài viết
+- Tạo bài viết mới với hình ảnh
+- Xem chi tiết bài viết
+
+### 💬 Nhắn Tin
+- Chat trực tiếp với bạn bè
+- Hiển thị avatar và tên người dùng
+- WebSocket real-time messaging
+- Danh sách cuộc trò chuyện
+
+### 👤 Profile
+- Xem và chỉnh sửa thông tin cá nhân
+- Thay đổi ảnh đại diện
+- Xem danh sách bài viết của bản thân
+
+### 👥 Bạn Bè
+- Tìm kiếm người dùng
+- Gửi/nhận lời mời kết bạn
+- Quản lý danh sách bạn bè
+
+### 🔔 Thông Báo
+- Nhận thông báo khi có người thích/bình luận
+- Thông báo lời mời kết bạn
+- Thông báo tin nhắn mới
+
+### ⚙️ Cài Đặt
+- Chọn theme: Light / Dark / System
+- Đăng xuất
+
+---
+
+## 🛠 Công Nghệ
+
+| Công nghệ | Mô tả |
+|-----------|-------|
+| **Kotlin** | Ngôn ngữ lập trình chính |
+| **Jetpack Compose** | Modern UI toolkit |
+| **Material Design 3** | Design system |
+| **Navigation Compose** | Điều hướng màn hình |
+| **Retrofit** | HTTP client cho API calls |
+| **OkHttp** | WebSocket & networking |
+| **Coil** | Image loading library |
+| **Coroutines + Flow** | Async programming |
+| **ViewModel** | State management |
+
+---
+
+## 📦 Cài Đặt
+
+### Yêu cầu
+- Android Studio Hedgehog (2023.1.1) trở lên
+- JDK 17+
+- Android SDK 34+
+- Kotlin 1.9+
+
+### Bước 1: Clone repository
+```bash
+git clone https://github.com/Hnd8604/forum-kma-app.git
+cd forum-kma-app
+```
+
+### Bước 2: Mở trong Android Studio
+1. Mở Android Studio
+2. File → Open → Chọn thư mục project
+3. Đợi Gradle sync hoàn tất
+
+### Bước 3: Cấu hình Backend URL
+Mở file `app/src/main/java/com/kma/base/data/network/NetworkModule.kt`:
+```kotlin
+private const val BASE_URL = "http://YOUR_SERVER_IP:8080/api/v1/"
+```
+
+### Bước 4: Build và chạy
+```bash
+./gradlew assembleDebug
+```
+Hoặc nhấn **Run** trong Android Studio.
+
+---
+
+## 📁 Cấu Trúc Dự Án
 
 ```
-app/src/main/
-├── java/com/kma/base/
-│   ├── MainActivity.kt              # Activity chính
-│   ├── MainScreen.kt                # Main screen với bottom nav
-│   ├── BottomNavGraph.kt            # Navigation graph
-│   ├── NavigationItem.kt            # Định nghĩa navigation items
-│   ├── screen/
-│   │   ├── SplashScreen.kt         # Splash screen (không dùng nữa)
-│   │   ├── OnboardingScreen.kt     # Onboarding
-│   │   ├── HomeScreen.kt           # Home
-│   │   ├── ProfileScreen.kt        # Profile
-│   │   └── Settings.kt             # Settings
-│   └── ui/theme/
-│       ├── Color.kt                # Định nghĩa màu
-│       ├── Theme.kt                # Theme setup
-│       └── Type.kt                 # Typography
-├── res/
-│   ├── drawable/                   # Icons và images
-│   ├── drawable-night/             # Icons cho dark mode
-│   ├── values/
-│   │   ├── colors.xml             # Màu sắc
-│   │   ├── strings.xml            # Text strings
-│   │   └── themes.xml             # Light theme
-│   └── values-night/
-│       ├── colors.xml             # Màu dark mode
-│       └── themes.xml             # Dark theme
-└── AndroidManifest.xml            # App manifest
+app/src/main/java/com/kma/base/
+├── MainActivity.kt              # Activity chính
+├── MainScreen.kt                # Main screen với bottom navigation
+├── AppNavigation.kt             # Navigation routes
+├── BottomNavGraph.kt            # Bottom navigation graph
+│
+├── data/
+│   ├── api/
+│   │   └── ApiServices.kt       # Retrofit API interfaces
+│   ├── model/
+│   │   ├── ApiModels.kt         # Data classes cho API
+│   │   ├── UserModels.kt        # User-related models
+│   │   ├── PostModels.kt        # Post-related models
+│   │   └── ...
+│   ├── network/
+│   │   └── NetworkModule.kt     # Retrofit & OkHttp config
+│   ├── websocket/
+│   │   └── ChatWebSocketManager.kt  # WebSocket cho chat
+│   ├── local/
+│   │   └── TokenManager.kt      # JWT token management
+│   └── repository/
+│       └── PostRepository.kt    # Data repository
+│
+├── screen/
+│   ├── HomeScreen.kt            # Trang chủ - Feed
+│   ├── MessagesScreen.kt        # Danh sách tin nhắn
+│   ├── ChatDetailScreen.kt      # Chi tiết chat
+│   ├── ProfileScreen.kt         # Trang cá nhân
+│   ├── EditProfileScreen.kt     # Chỉnh sửa profile
+│   ├── PostDetailScreen.kt      # Chi tiết bài viết
+│   ├── CreatePostScreen.kt      # Tạo bài viết
+│   ├── LoginScreen.kt           # Đăng nhập
+│   ├── RegisterScreen.kt        # Đăng ký
+│   ├── FriendsScreen.kt         # Quản lý bạn bè
+│   ├── NotificationsScreen.kt   # Thông báo
+│   ├── SettingsScreen.kt        # Cài đặt
+│   └── OnboardingScreen.kt      # Onboarding
+│
+├── viewmodel/
+│   ├── AuthViewModel.kt         # Authentication state
+│   ├── HomeViewModel.kt         # Home screen state
+│   ├── ChatViewModel.kt         # Chat state
+│   ├── PostDetailViewModel.kt   # Post detail state
+│   └── ...
+│
+├── model/
+│   ├── AppTheme.kt              # Theme enum
+│   └── BottomNavBarItem.kt      # Navigation items
+│
+└── ui/theme/
+    ├── Color.kt                 # Định nghĩa màu
+    ├── Theme.kt                 # Theme setup
+    └── Type.kt                  # Typography
 ```
 
 ---
 
-## Tùy Chỉnh Logo và Splash Screen
+## 🔌 API Endpoints
 
-### 1. Thay đổi Logo App
+App kết nối với backend qua các API sau:
 
-**Vị trí file:**
-- Logo chính: `app/src/main/res/drawable/applogo2.png`
-- Logo dark mode: `app/src/main/res/drawable-night/applogo_night.png` (tùy chọn)
+### Authentication
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| POST | `/auth/login` | Đăng nhập |
+| POST | `/auth/register` | Đăng ký |
+| POST | `/auth/logout` | Đăng xuất |
 
-**Cách thay:**
-1. Chuẩn bị logo (format PNG, nền trong suốt)
-2. Thay thế file `applogo2.png`
-3. Nếu muốn logo khác cho dark mode, thêm `applogo_night.png` vào `drawable-night/`
+### User
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/users/me` | Lấy thông tin user hiện tại |
+| GET | `/users/{id}` | Lấy thông tin user theo ID |
+| PUT | `/users/me` | Cập nhật profile |
 
-### 2. Điều chỉnh kích thước Logo trên Splash Screen
+### Posts
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/posts/feed` | Lấy feed bài viết |
+| GET | `/posts/{id}` | Chi tiết bài viết |
+| POST | `/posts` | Tạo bài viết mới |
+| DELETE | `/posts/{id}` | Xóa bài viết |
 
-**File:** `app/src/main/res/drawable/splash_logo.xml`
+### Comments
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/comments/post/{postId}` | Lấy comments của bài viết |
+| POST | `/comments` | Tạo comment mới |
 
+### Chat
+| Method | Endpoint | Mô tả |
+|--------|----------|-------|
+| GET | `/chat/conversations` | Danh sách cuộc trò chuyện |
+| GET | `/chat/conversations/{id}/messages` | Tin nhắn trong cuộc trò chuyện |
+| POST | `/chat/messages` | Gửi tin nhắn |
+
+### WebSocket
+```
+ws://SERVER_IP:8090/ws?userId={userId}
+```
+
+---
+
+## 🎨 Tùy Chỉnh
+
+### Thay đổi màu sắc chủ đạo
+File: `app/src/main/java/com/kma/base/ui/theme/Color.kt`
+
+### Thay đổi logo
+- Logo: `app/src/main/res/drawable/applogo2.png`
+- Icon launcher: `app/src/main/res/mipmap-*/ic_launcher.png`
+
+### Thay đổi tên app
+File: `app/src/main/res/values/strings.xml`
 ```xml
-<item
-    android:drawable="@drawable/applogo2"
-    android:width="200dp"        <!-- Thay đổi kích thước -->
-    android:height="200dp"       <!-- Thay đổi kích thước -->
-    android:gravity="center" />
-```
-
-### 3. Thay đổi màu nền Splash Screen
-
-**File Light Mode:** `app/src/main/res/values/colors.xml`
-```xml
-<color name="splash_background">#FFFFFFFF</color> <!-- Màu trắng -->
-```
-
-**File Dark Mode:** `app/src/main/res/values-night/colors.xml`
-```xml
-<color name="splash_background">#FF000000</color> <!-- Màu đen -->
-```
-
-### 4. Tùy chỉnh Animation Splash
-
-**File:** `app/src/main/java/com/kma/base/MainActivity.kt`
-
-Tìm `splashScreen.setOnExitAnimationListener`:
-```kotlin
-slideUp.duration = 500L          // Thời gian animation (ms)
-fadeOut.duration = 500L          // Thời gian fade out (ms)
-```
-
-**File:** `app/src/main/res/values/themes.xml`
-```xml
-<item name="windowSplashScreenAnimationDuration">1000</item> <!-- ms -->
+<string name="app_name">Forum KMA</string>
 ```
 
 ---
 
-## Tùy Chỉnh Theme và Màu Sắc
-
-### 1. Thay đổi màu chính của app
-
-**File:** `app/src/main/java/com/kma/base/ui/theme/Color.kt`
-
-```kotlin
-// Light Theme Colors
-val md_theme_light_primary = Color(0xFF6200EE)      // Màu chính
-val md_theme_light_secondary = Color(0xFF03DAC6)    // Màu phụ
-val md_theme_light_background = Color(0xFFFFFFFF)   // Nền
-
-// Dark Theme Colors
-val md_theme_dark_primary = Color(0xFFBB86FC)
-val md_theme_dark_secondary = Color(0xFF03DAC6)
-val md_theme_dark_background = Color(0xFF121212)
-```
-
-### 2. Màu Navigation Bar
-
-**File:** `app/src/main/java/com/kma/base/MainScreen.kt`
-
-Tìm `NavigationBarItemDefaults`:
-```kotlin
-colors = NavigationBarItemDefaults.colors(
-    selectedIconColor = Color.White,
-    unselectedIconColor = Color.Gray,
-    indicatorColor = Color.Blue
-)
-```
-
----
-
-## Tùy Chỉnh Navigation
-
-### 1. Thêm/Xóa Tab Navigation
-
-**File:** `app/src/main/java/com/kma/base/NavigationItem.kt`
-
-```kotlin
-sealed class NavigationItem(val route: String, val icon: Int, val title: String) {
-    object Home : NavigationItem("home", R.drawable.home_24px, "Home")
-    object Profile : NavigationItem("profile", R.drawable.person_24px, "Profile")
-    object Settings : NavigationItem("settings", R.drawable.settings_24px, "Settings")
-    
-    // Thêm tab mới:
-    // object NewTab : NavigationItem("newtab", R.drawable.icon_new, "New Tab")
-}
-```
-
-**File:** `app/src/main/java/com/kma/base/MainScreen.kt`
-
-Cập nhật danh sách screens:
-```kotlin
-val screens = listOf(
-    NavigationItem.Home,
-    NavigationItem.Profile,
-    NavigationItem.Settings,
-    // NavigationItem.NewTab  // Thêm vào đây
-)
-```
-
-### 2. Thay đổi Icon Navigation
-
-**Vị trí:** `app/src/main/res/drawable/`
-
-Thêm icon mới (format XML hoặc PNG) và cập nhật trong `NavigationItem.kt`:
-```kotlin
-object Home : NavigationItem("home", R.drawable.icon_moi, "Home")
-```
-
----
-
-## Tùy Chỉnh Onboarding
-
-### 1. Thay đổi nội dung Onboarding
-
-**File:** `app/src/main/java/com/kma/base/screen/OnboardingScreen.kt`
-
-Tìm `val pages = listOf(...)`:
-```kotlin
-val pages = listOf(
-    OnboardingPage(
-        title = "Tiêu đề mới",
-        description = "Mô tả mới",
-        icon = Icons.Default.Home  // Thay icon
-    ),
-    // Thêm trang mới hoặc xóa trang
-)
-```
-
-### 2. Thay đổi màu Theme Selection
-
-**File:** `app/src/main/java/com/kma/base/screen/OnboardingScreen.kt`
-
-Tìm `ThemeOptionCard` và sửa `colors`:
-```kotlin
-colors = CardDefaults.cardColors(
-    containerColor = if (isSelected) 
-        MaterialTheme.colorScheme.primaryContainer 
-    else 
-        MaterialTheme.colorScheme.surfaceVariant
-)
-```
-
-### 3. Tùy chỉnh các trang trong Onboarding
-
-**File:** `app/src/main/java/com/kma/base/screen/OnboardingScreen.kt`
-
-Tìm `val pages = listOf(...)` và sửa nội dung:
-```kotlin
-val pages = listOf(
-    OnboardingPage(
-        title = "Tiêu đề trang 1",
-        description = "Mô tả trang 1",
-        icon = Icons.Default.Home  // Thay icon
-    ),
-    OnboardingPage(
-        title = "Tiêu đề trang 2",
-        description = "Mô tả trang 2",
-        icon = Icons.Default.Person
-    ),
-    OnboardingPage(
-        title = "Tiêu đề trang 3",
-        description = "Mô tả trang 3",
-        icon = Icons.Default.Settings
-    )
-    // Có thể thêm hoặc xóa trang
-)
-```
-
-**Lưu ý:** 
-- Onboarding chỉ hiển thị lần đầu mở app
-- Có thể bỏ qua bằng nút "Bỏ qua"
-- Để test lại: Clear app data hoặc uninstall rồi cài lại
-
----
-
-## Thêm Màn Hình Mới
-
-### Bước 1: Tạo file Screen mới
-
-**Vị trí:** `app/src/main/java/com/kma/base/screen/NewScreen.kt`
-
-```kotlin
-package com.kma.base.screen
-
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-
-@Composable
-fun NewScreen(modifier: Modifier = Modifier) {
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background
-    ) {
-        Column(
-            modifier = Modifier.fillMaxSize().padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "New Screen",
-                fontSize = 24.sp,
-                color = MaterialTheme.colorScheme.onBackground
-            )
-        }
-    }
-}
-```
-
-### Bước 2: Thêm vào Navigation Graph
-
-**File:** `app/src/main/java/com/kma/base/BottomNavGraph.kt`
-
-```kotlin
-import com.kma.base.screen.NewScreen
-
-// Trong NavHost:
-composable(route = NavigationItem.NewTab.route) {
-    NewScreen()
-}
-```
-
-### Bước 3: Thêm Navigation Item (nếu cần bottom nav)
-
-Xem phần [Tùy Chỉnh Navigation](#tùy-chỉnh-navigation)
-
----
-
-## Build và Deploy
-
-### 1. Đổi tên App
-
-**File:** `app/src/main/res/values/strings.xml`
-```xml
-<string name="app_name">Tên App Mới</string>
-```
-
-### 2. Đổi Package Name
-
-**File:** `app/build.gradle.kts`
-```kotlin
-android {
-    namespace = "com.yourcompany.yourapp"  // Đổi package name
-    defaultConfig {
-        applicationId = "com.yourcompany.yourapp"
-    }
-}
-```
-
-Sau đó refactor package trong Android Studio:
-1. Right-click vào package `com.kma.base`
-2. Refactor → Rename
-3. Nhập package name mới
-
-### 3. Build APK
+## 🔧 Build Commands
 
 ```bash
-./gradlew assembleDebug      # Build debug APK
-./gradlew assembleRelease    # Build release APK
-```
+# Build debug APK
+./gradlew assembleDebug
 
-APK sẽ nằm ở: `app/build/outputs/apk/`
+# Build release APK
+./gradlew assembleRelease
 
-### 4. Tạo Keystore để ký app
-
-```bash
-keytool -genkey -v -keystore my-release-key.jks -keyalg RSA -keysize 2048 -validity 10000 -alias my-key-alias
-```
-
-**File:** `app/build.gradle.kts`
-```kotlin
-android {
-    signingConfigs {
-        create("release") {
-            storeFile = file("my-release-key.jks")
-            storePassword = "password"
-            keyAlias = "my-key-alias"
-            keyPassword = "password"
-        }
-    }
-    buildTypes {
-        release {
-            signingConfig = signingConfigs.getByName("release")
-        }
-    }
-}
-```
-
----
-
-## Các File Quan Trọng Cần Chỉnh
-
-### ✅ Bắt buộc phải sửa:
-1. ✏️ **Logo**: `app/src/main/res/drawable/applogo2.png`
-2. ✏️ **Tên app**: `app/src/main/res/values/strings.xml`
-3. ✏️ **Package name**: `app/build.gradle.kts`
-4. ✏️ **Màu sắc**: `app/src/main/java/com/kma/base/ui/theme/Color.kt`
-
-### 🎨 Nên tùy chỉnh:
-5. ✏️ **Onboarding**: `app/src/main/java/com/kma/base/screen/OnboardingScreen.kt`
-6. ✏️ **Theme colors**: `app/src/main/res/values/colors.xml`
-7. ✏️ **Navigation items**: `app/src/main/java/com/kma/base/NavigationItem.kt`
-
-### 🔧 Tùy chọn:
-8. ✏️ **Splash animation**: `app/src/main/java/com/kma/base/MainActivity.kt`
-9. ✏️ **Typography**: `app/src/main/java/com/kma/base/ui/theme/Type.kt`
-
----
-
-## Lưu Ý Quan Trọng
-
-### Theme System
-- App có 3 chế độ: **Light**, **Dark**, **Follow System**
-- Theme được lưu trong `SharedPreferences` với key `"theme_mode"`
-- Splash screen sẽ theo system theme của điện thoại (không theo app setting)
-
-### Onboarding
-- Chỉ hiển thị lần đầu mở app
-- Có thể bỏ qua bằng nút "Skip"
-- Người dùng chọn theme ở trang cuối onboarding
-
-### Navigation
-- Sử dụng Jetpack Navigation Compose
-- Bottom Navigation với animation slide
-- Có thể thêm/xóa tabs dễ dàng
-
----
-
-## Troubleshooting
-
-### Lỗi build không thành công
-```bash
-# Clean và rebuild
+# Clean build
 ./gradlew clean
-./gradlew build
+
+# Run tests
+./gradlew test
+
+# Stop Gradle daemon
+./gradlew --stop
 ```
 
-### Logo không hiển thị
-- Kiểm tra tên file phải là `applogo2.png`
-- Kiểm tra file có ở đúng folder `drawable/`
-- Xóa folder `build/` và rebuild
-
-### Theme không đổi
-- Clear app data: Settings → Apps → App → Clear data
-- Hoặc uninstall và cài lại app
-
-### Icon navigation không hiển thị
-- Đảm bảo icon ở format XML (vector drawable) hoặc PNG
-- Đặt tên file không có ký tự đặc biệt, chỉ dùng: `a-z`, `0-9`, `_`
+APK output: `app/build/outputs/apk/`
 
 ---
 
-## Contact & Support
+## 🐛 Troubleshooting
 
-- **Author**: Base Project Template
-- **Version**: 1.0
-- **Last Updated**: November 2025
+### Lỗi: File bị lock khi build
+```bash
+./gradlew --stop
+Remove-Item -Recurse -Force "app/build"
+./gradlew assembleDebug
+```
 
-Chúc bạn phát triển app thành công! 🚀
-#   f o r u m - k m a - a p p  
- 
+### Lỗi: Không thể kết nối API
+- Kiểm tra `BASE_URL` trong `NetworkModule.kt`
+- Đảm bảo backend đang chạy
+- Kiểm tra kết nối mạng
+
+### Lỗi: WebSocket không hoạt động
+- Kiểm tra URL WebSocket
+- Đảm bảo user đã đăng nhập
+- Kiểm tra token còn hiệu lực
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+## 👥 Contributors
+
+- **Hnd8604** - *Developer*
+
+---
+
+## 📞 Contact
+
+- **GitHub**: [Hnd8604](https://github.com/Hnd8604)
+- **Repository**: [forum-kma-app](https://github.com/Hnd8604/forum-kma-app)
+
+---
+
+<p align="center">
+  Made with ❤️ for KMA Students
+</p>
