@@ -25,6 +25,7 @@ object NavRoutes {
     const val CREATE_GROUP = "create_group"
     const val PROFILE = "profile/{userId}"
     const val EDIT_PROFILE = "edit_profile"
+    const val CHANGE_PASSWORD = "change_password"
     const val CHAT_DETAIL = "chat/{conversationId}/{conversationName}"
     
     fun postDetail(postId: String) = "post/$postId"
@@ -108,6 +109,9 @@ fun AppNavigation(
                 onNavigateToEditProfile = {
                     navController.navigate(NavRoutes.EDIT_PROFILE)
                 },
+                onNavigateToChangePassword = {
+                    navController.navigate(NavRoutes.CHANGE_PASSWORD)
+                },
                 onNavigateToChatDetail = { conversationId, conversationName ->
                     navController.navigate(NavRoutes.chatDetail(conversationId, conversationName))
                 }
@@ -186,6 +190,13 @@ fun AppNavigation(
             EditProfileScreen(
                 onBackClick = { navController.popBackStack() },
                 onSaveSuccess = { navController.popBackStack() }
+            )
+        }
+        
+        // Change Password Screen
+        composable(NavRoutes.CHANGE_PASSWORD) {
+            ChangePasswordScreen(
+                onNavigateBack = { navController.popBackStack() }
             )
         }
         

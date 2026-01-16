@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+    
+    <!-- Background rounded rectangle -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M30,30 L170,30 Q180,30 180,40 L180,140 Q180,150 170,150 L100,170 L30,150 Q20,150 20,140 L20,40 Q20,30 30,30 Z" />
+    
+    <!-- Book icon - open book shape -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M100,70 
+            C80,70 60,75 50,85 
+            L50,130 
+            C60,120 80,115 100,115 
+            C120,115 140,120 150,130 
+            L150,85 
+            C140,75 120,70 100,70 Z" />
+    
+    <!-- Book center line -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M98,75 L98,110 L102,110 L102,75 Z" />
+    
+    <!-- Key icon -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M70,50 
+            A15,15 0 1,1 70,80 
+            A15,15 0 1,1 70,50 
+            M82,60 L120,60 L120,55 L130,55 L130,65 L120,65 L120,70 L115,70 L115,65 L110,65 L110,70 L105,70 L105,65 L82,65 Z" />
+    
+    <!-- Key hole -->
+    <path
+        android:fillColor="#E53935"
+        android:pathData="M70,58 A7,7 0 1,1 70,72 A7,7 0 1,1 70,58 Z" />
+    
+</vector>

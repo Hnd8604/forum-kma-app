@@ -136,6 +136,43 @@ class AuthRepository {
     suspend fun isLoggedIn(): Boolean {
         return tokenManager.isLoggedInSync()
     }
+    
+    /**
+     * Đổi mật khẩu - Bước 1: Gửi yêu cầu đổi mật khẩu
+     * Backend sẽ gửi OTP đến email của user
+     */
+    suspend fun changePassword(oldPassword: String, newPassword: String): Result<String> {
+        return try {
+            val response = api.changePassword(
+                ChangePasswordRequest(oldPassword, newPassword)
+            )
+            if (response.code == "200") {
+                Result.success(response.message)
+            } else {
+                Result.failure(Exception(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    /**
+     * Đổi mật khẩu - Bước 2: Xác nhận với OTP
+     */
+    suspend fun changePasswordVerify(otp: String): Result<String> {
+        return try {
+            val response = api.changePasswordVerify(
+                ChangePasswordVerifyRequest(otp)
+            )
+            if (response.code == "200") {
+                Result.success(response.message)
+            } else {
+                Result.failure(Exception(response.message))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }
 
 class UserRepository {

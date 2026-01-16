@@ -34,6 +34,7 @@ fun MainScreen(
         onNavigateToFriends: () -> Unit = {},
         onNavigateToGroups: () -> Unit = {},
         onNavigateToEditProfile: () -> Unit = {},
+        onNavigateToChangePassword: () -> Unit = {},
         onNavigateToChatDetail: (conversationId: String, conversationName: String) -> Unit =
                 { _, _ ->
                 }
@@ -54,6 +55,7 @@ fun MainScreen(
                     onNavigateToNotifications = onNavigateToNotifications,
                     onNavigateToFriends = onNavigateToFriends,
                     onNavigateToEditProfile = onNavigateToEditProfile,
+                    onNavigateToChangePassword = onNavigateToChangePassword,
                     onNavigateToChatDetail = onNavigateToChatDetail
             )
         }

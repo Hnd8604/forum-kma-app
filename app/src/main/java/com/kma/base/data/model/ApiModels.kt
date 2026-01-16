@@ -38,6 +38,17 @@ data class RegisterRequest(
         @SerializedName("address") val address: String? = null
 )
 
+// Change Password Request - Bước 1
+data class ChangePasswordRequest(
+        @SerializedName("oldPassword") val oldPassword: String,
+        @SerializedName("newPassword") val newPassword: String
+)
+
+// Change Password Verify Request - Bước 2
+data class ChangePasswordVerifyRequest(
+        @SerializedName("otp") val otp: String
+)
+
 // AuthResponse - NO user object, only tokens!
 data class AuthResponse(
         @SerializedName("accessToken") val accessToken: String,

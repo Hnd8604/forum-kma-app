@@ -47,6 +47,7 @@ fun SettingsScreen(
     currentTheme: AppTheme = AppTheme.SYSTEM,
     onThemeSelected: (AppTheme) -> Unit = {},
     onLogout: () -> Unit = {},
+    onNavigateToChangePassword: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -135,7 +136,7 @@ fun SettingsScreen(
                 icon = Icons.Default.Lock,
                 title = "Đổi mật khẩu",
                 description = "Thay đổi mật khẩu đăng nhập",
-                onClick = { /* TODO */ }
+                onClick = onNavigateToChangePassword
             )
             
             Spacer(modifier = Modifier.height(24.dp))

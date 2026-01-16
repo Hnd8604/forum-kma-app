@@ -26,6 +26,7 @@ fun BottomNavGraph(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToFriends: () -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToChangePassword: () -> Unit = {},
     onNavigateToChatDetail: (conversationId: String, conversationName: String) -> Unit = { _, _ -> }
 ) {
     NavHost(
@@ -58,7 +59,8 @@ fun BottomNavGraph(
             SettingsScreen(
                 currentTheme = currentTheme,
                 onThemeSelected = onThemeSelected,
-                onLogout = onLogout
+                onLogout = onLogout,
+                onNavigateToChangePassword = onNavigateToChangePassword
             )
         }
     }

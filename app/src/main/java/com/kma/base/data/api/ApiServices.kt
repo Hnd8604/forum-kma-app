@@ -17,6 +17,18 @@ interface AuthApiService {
     
     @POST("auth/refresh")
     suspend fun refreshToken(@Body refreshToken: Map<String, String>): ApiResponse<AuthResponse>
+    
+    /**
+     * Đổi mật khẩu - Bước 1: Gửi OTP xác nhận
+     */
+    @POST("auth/change-password")
+    suspend fun changePassword(@Body request: ChangePasswordRequest): ApiResponse<String>
+    
+    /**
+     * Đổi mật khẩu - Bước 2: Xác nhận với OTP
+     */
+    @POST("auth/change-password/verify")
+    suspend fun changePasswordVerify(@Body request: ChangePasswordVerifyRequest): ApiResponse<String>
 }
 
 interface UserApiService {
