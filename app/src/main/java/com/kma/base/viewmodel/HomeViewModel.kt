@@ -13,82 +13,111 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class HomeUiState(
-    val posts: List<PostWithInteractionResponse> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null,
-    val currentPage: Int = 0,
-    val hasMore: Boolean = true
+        val posts: List<PostWithInteractionResponse> = emptyList(),
+        val isLoading: Boolean = false,
+        val error: String? = null,
+        val currentPage: Int = 0,
+        val hasMore: Boolean = true,
+        val currentUserAvatarUrl: String? = null
 )
 
 class HomeViewModel : ViewModel() {
     private val postRepository = PostRepository()
     private val interactionApi = NetworkModule.interactionApi
-    
+    private val userApi = NetworkModule.userApi
+
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-    
-    fun loadPosts(refresh: Boolean = false) {
-        if (_uiState.value.isLoading) return
-        
-        val page = if (refresh) 0 else _uiState.value.currentPage
-        
+
+    init {
+        // Load current user info on init
+        loadCurrentUser()
+    }
+
+    private fun loadCurrentUser() {
         viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true, error = null) }
-            
-            val result = postRepository.getFeed(page = page)
-            
-            result.onSuccess { pageResponse ->
-                _uiState.update { state ->
-                    val newPosts = if (refresh) {
-                        pageResponse.content
-                    } else {
-                        state.posts + pageResponse.content
-                    }
-                    
-                    state.copy(
-                        posts = newPosts,
-                        isLoading = false,
-                        currentPage = page + 1,
-                        hasMore = pageResponse.content.isNotEmpty() && page < pageResponse.totalPages - 1,
-                        error = null
-                    )
+            try {
+                val response = userApi.getMe()
+                if (response.code == "200" && response.result != null) {
+                    _uiState.update { it.copy(currentUserAvatarUrl = response.result.avatarUrl) }
                 }
-            }.onFailure { error ->
-                _uiState.update { 
-                    it.copy(
-                        isLoading = false,
-                        error = error.message ?: "Không thể tải bài viết"
-                    )
-                }
+            } catch (e: Exception) {
+                Log.e("HomeVM", "Error loading current user", e)
             }
         }
     }
-    
+
+    fun loadPosts(refresh: Boolean = false) {
+        if (_uiState.value.isLoading) return
+
+        val page = if (refresh) 0 else _uiState.value.currentPage
+
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, error = null) }
+
+            val result = postRepository.getFeed(page = page)
+
+            result
+                    .onSuccess { pageResponse ->
+                        _uiState.update { state ->
+                            val newPosts =
+                                    if (refresh) {
+                                        pageResponse.content
+                                    } else {
+                                        state.posts + pageResponse.content
+                                    }
+
+                            state.copy(
+                                    posts = newPosts,
+                                    isLoading = false,
+                                    currentPage = page + 1,
+                                    hasMore =
+                                            pageResponse.content.isNotEmpty() &&
+                                                    page < pageResponse.totalPages - 1,
+                                    error = null
+                            )
+                        }
+                    }
+                    .onFailure { error ->
+                        _uiState.update {
+                            it.copy(
+                                    isLoading = false,
+                                    error = error.message ?: "Không thể tải bài viết"
+                            )
+                        }
+                    }
+        }
+    }
+
     fun loadMorePosts() {
         if (!_uiState.value.hasMore || _uiState.value.isLoading) return
         loadPosts(refresh = false)
     }
-    
+
     fun refreshPosts() {
         loadPosts(refresh = true)
     }
-    
+
     fun toggleLike(postId: String, isCurrentlyLiked: Boolean) {
         viewModelScope.launch {
             // Optimistic update
             _uiState.update { state ->
                 state.copy(
-                    posts = state.posts.map { post ->
-                        if (post.id == postId) {
-                            post.copy(
-                                reactionCount = if (isCurrentlyLiked) post.reactionCount - 1 else post.reactionCount + 1,
-                                userReaction = if (isCurrentlyLiked) null else "LIKE"
-                            )
-                        } else post
-                    }
+                        posts =
+                                state.posts.map { post ->
+                                    if (post.id == postId) {
+                                        post.copy(
+                                                reactionCount =
+                                                        if (isCurrentlyLiked) post.reactionCount - 1
+                                                        else post.reactionCount + 1,
+                                                userReaction =
+                                                        if (isCurrentlyLiked) null else "LIKE"
+                                        )
+                                    } else post
+                                }
                 )
             }
-            
+
             try {
                 if (isCurrentlyLiked) {
                     // Remove like
@@ -100,10 +129,8 @@ class HomeViewModel : ViewModel() {
                     }
                 } else {
                     // Add like
-                    val response = interactionApi.reactToPost(mapOf(
-                        "postId" to postId,
-                        "type" to "LIKE"
-                    ))
+                    val response =
+                            interactionApi.reactToPost(mapOf("postId" to postId, "type" to "LIKE"))
                     Log.d("HomeVM", "Add like response: ${response.code}")
                     if (response.code != "200") {
                         // Revert if failed
@@ -117,18 +144,21 @@ class HomeViewModel : ViewModel() {
             }
         }
     }
-    
+
     private fun revertLike(postId: String, wasLiked: Boolean) {
         _uiState.update { state ->
             state.copy(
-                posts = state.posts.map { post ->
-                    if (post.id == postId) {
-                        post.copy(
-                            reactionCount = if (wasLiked) post.reactionCount + 1 else post.reactionCount - 1,
-                            userReaction = if (wasLiked) "LIKE" else null
-                        )
-                    } else post
-                }
+                    posts =
+                            state.posts.map { post ->
+                                if (post.id == postId) {
+                                    post.copy(
+                                            reactionCount =
+                                                    if (wasLiked) post.reactionCount + 1
+                                                    else post.reactionCount - 1,
+                                            userReaction = if (wasLiked) "LIKE" else null
+                                    )
+                                } else post
+                            }
             )
         }
     }

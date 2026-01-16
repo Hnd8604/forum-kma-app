@@ -33,152 +33,128 @@ private val DarkGray = Color(0xFF65676B)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeViewModel = viewModel(),
-    onPostClick: (String) -> Unit = {},
-    onCreatePostClick: () -> Unit = {},
-    onNotificationClick: () -> Unit = {},
-    onFriendsClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+        viewModel: HomeViewModel = viewModel(),
+        onPostClick: (String) -> Unit = {},
+        onCreatePostClick: () -> Unit = {},
+        onNotificationClick: () -> Unit = {},
+        onFriendsClick: () -> Unit = {},
+        modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
-    LaunchedEffect(Unit) {
-        viewModel.loadPosts()
-    }
-    
+
+    LaunchedEffect(Unit) { viewModel.loadPosts() }
+
     Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { 
-                    Text(
-                        "Forum KMA",
-                        fontWeight = FontWeight.Bold,
-                        color = PrimaryBlue
-                    ) 
-                },
-                actions = {
-                    IconButton(onClick = onNotificationClick) {
-                        Icon(Icons.Default.Notifications, contentDescription = "Notifications")
-                    }
-                    IconButton(onClick = onFriendsClick) {
-                        Icon(Icons.Default.Person, contentDescription = "Friends")
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = onCreatePostClick,
-                containerColor = PrimaryBlue,
-                contentColor = Color.White
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Create Post")
+            topBar = {
+                TopAppBar(
+                        title = {
+                            Text("Forum KMA", fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                        },
+                        actions = {
+                            IconButton(onClick = onNotificationClick) {
+                                Icon(
+                                        Icons.Default.Notifications,
+                                        contentDescription = "Notifications"
+                                )
+                            }
+                            IconButton(onClick = onFriendsClick) {
+                                Icon(Icons.Default.Person, contentDescription = "Friends")
+                            }
+                        }
+                )
+            },
+            floatingActionButton = {
+                FloatingActionButton(
+                        onClick = onCreatePostClick,
+                        containerColor = PrimaryBlue,
+                        contentColor = Color.White
+                ) { Icon(Icons.Default.Add, contentDescription = "Create Post") }
             }
-        }
     ) { paddingValues ->
         when {
             uiState.isLoading && uiState.posts.isEmpty() -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
+                        modifier = Modifier.fillMaxSize().padding(paddingValues),
+                        contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
             }
-            
             uiState.error != null && uiState.posts.isEmpty() -> {
                 Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    contentAlignment = Alignment.Center
+                        modifier = Modifier.fillMaxSize().padding(paddingValues),
+                        contentAlignment = Alignment.Center
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = uiState.error ?: "Đã xảy ra lỗi",
-                            color = MaterialTheme.colorScheme.error
+                                text = uiState.error ?: "Đã xảy ra lỗi",
+                                color = MaterialTheme.colorScheme.error
                         )
                         Spacer(modifier = Modifier.height(16.dp))
-                        Button(onClick = { viewModel.loadPosts() }) {
-                            Text("Thử lại")
-                        }
+                        Button(onClick = { viewModel.loadPosts() }) { Text("Thử lại") }
                     }
                 }
             }
-            
             else -> {
                 LazyColumn(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = modifier.fillMaxSize().padding(paddingValues),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Create post card
                     item {
-                        CreatePostCard(onClick = onCreatePostClick)
+                        CreatePostCard(
+                                onClick = onCreatePostClick,
+                                avatarUrl = uiState.currentUserAvatarUrl
+                        )
                     }
-                    
+
                     // Posts - filter out any posts with null id
                     val validPosts = uiState.posts.filter { it.id != null }
                     items(
-                        items = validPosts,
-                        key = { it.id!! }  // Safe because we filtered above
+                            items = validPosts,
+                            key = { it.id!! } // Safe because we filtered above
                     ) { post ->
                         PostItem(
-                            post = post,
-                            onClick = { post.id?.let { onPostClick(it) } },
-                            onLikeClick = { 
-                                post.id?.let { postId ->
-                                    viewModel.toggleLike(postId, post.userReaction != null) 
-                                }
-                            },
-                            onCommentClick = { post.id?.let { onPostClick(it) } }
+                                post = post,
+                                onClick = { post.id?.let { onPostClick(it) } },
+                                onLikeClick = {
+                                    post.id?.let { postId ->
+                                        viewModel.toggleLike(postId, post.userReaction != null)
+                                    }
+                                },
+                                onCommentClick = { post.id?.let { onPostClick(it) } }
                         )
                     }
-                    
+
                     // Loading more indicator
                     if (uiState.isLoading && uiState.posts.isNotEmpty()) {
                         item {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                CircularProgressIndicator()
-                            }
+                                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                            ) { CircularProgressIndicator() }
                         }
                     }
-                    
+
                     // Empty state
                     if (uiState.posts.isEmpty() && !uiState.isLoading) {
                         item {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(32.dp),
-                                contentAlignment = Alignment.Center
+                                    modifier = Modifier.fillMaxWidth().padding(32.dp),
+                                    contentAlignment = Alignment.Center
                             ) {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                     Icon(
-                                        Icons.Default.Create,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(64.dp),
-                                        tint = DarkGray
+                                            Icons.Default.Create,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(64.dp),
+                                            tint = DarkGray
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
-                                    Text(
-                                        "Chưa có bài viết nào",
-                                        color = DarkGray,
-                                        fontSize = 16.sp
-                                    )
+                                    Text("Chưa có bài viết nào", color = DarkGray, fontSize = 16.sp)
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        "Hãy tạo bài viết đầu tiên!",
-                                        color = DarkGray,
-                                        fontSize = 14.sp
+                                            "Hãy tạo bài viết đầu tiên!",
+                                            color = DarkGray,
+                                            fontSize = 14.sp
                                     )
                                 }
                             }
@@ -191,240 +167,218 @@ fun HomeScreen(
 }
 
 @Composable
-private fun CreatePostCard(onClick: () -> Unit) {
+private fun CreatePostCard(onClick: () -> Unit, avatarUrl: String? = null) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            modifier =
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp).clickable(onClick = onClick),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                modifier = Modifier.fillMaxWidth().padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar
             Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryBlue),
-                contentAlignment = Alignment.Center
+                    modifier = Modifier.size(40.dp).clip(CircleShape).background(PrimaryBlue),
+                    contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
+                if (!avatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                            model = avatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.fillMaxSize().clip(CircleShape),
+                            contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Icon(
+                            Icons.Default.Person,
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.size(24.dp)
+                    )
+                }
             }
-            
+
             Spacer(modifier = Modifier.width(12.dp))
-            
+
             // Placeholder text
             Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clip(RoundedCornerShape(20.dp))
-                    .background(LightGray)
-                    .padding(horizontal = 16.dp, vertical = 10.dp)
-            ) {
-                Text(
-                    "Bạn đang nghĩ gì?",
-                    color = DarkGray,
-                    fontSize = 14.sp
-                )
-            }
+                    modifier =
+                            Modifier.weight(1f)
+                                    .clip(RoundedCornerShape(20.dp))
+                                    .background(LightGray)
+                                    .padding(horizontal = 16.dp, vertical = 10.dp)
+            ) { Text("Bạn đang nghĩ gì?", color = DarkGray, fontSize = 14.sp) }
         }
     }
 }
 
 @Composable
 private fun PostItem(
-    post: PostWithInteractionResponse,
-    onClick: () -> Unit,
-    onLikeClick: () -> Unit,
-    onCommentClick: () -> Unit
+        post: PostWithInteractionResponse,
+        onClick: () -> Unit,
+        onLikeClick: () -> Unit,
+        onCommentClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp)
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            modifier =
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp).clickable(onClick = onClick),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // Author row
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
             ) {
                 // Avatar
                 if (!post.authorAvatarUrl.isNullOrBlank()) {
                     AsyncImage(
-                        model = post.authorAvatarUrl,
-                        contentDescription = "Avatar",
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape),
-                        contentScale = ContentScale.Crop
+                            model = post.authorAvatarUrl,
+                            contentDescription = "Avatar",
+                            modifier = Modifier.size(40.dp).clip(CircleShape),
+                            contentScale = ContentScale.Crop
                     )
                 } else {
                     Box(
-                        modifier = Modifier
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(PrimaryBlue),
-                        contentAlignment = Alignment.Center
+                            modifier =
+                                    Modifier.size(40.dp).clip(CircleShape).background(PrimaryBlue),
+                            contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = (post.authorName?.firstOrNull() ?: "U").toString().uppercase(),
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                                text =
+                                        (post.authorName?.firstOrNull() ?: "U")
+                                                .toString()
+                                                .uppercase(),
+                                color = Color.White,
+                                fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                
+
                 Spacer(modifier = Modifier.width(12.dp))
-                
+
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = post.authorName ?: "Unknown",
-                        fontWeight = FontWeight.SemiBold,
-                        fontSize = 14.sp
+                            text = post.authorName ?: "Unknown",
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 14.sp
                     )
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = formatTimeAgo(post.createdAt),
-                            color = DarkGray,
-                            fontSize = 12.sp
+                                text = formatTimeAgo(post.createdAt),
+                                color = DarkGray,
+                                fontSize = 12.sp
                         )
                         if (post.groupName != null) {
                             Text(" • ", color = DarkGray, fontSize = 12.sp)
                             Text(
-                                text = post.groupName,
-                                color = PrimaryBlue,
-                                fontSize = 12.sp,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
+                                    text = post.groupName,
+                                    color = PrimaryBlue,
+                                    fontSize = 12.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                             )
                         }
                     }
                 }
-                
-                IconButton(onClick = { /* More options */ }) {
+
+                IconButton(onClick = { /* More options */}) {
                     Icon(Icons.Default.MoreVert, contentDescription = "More")
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             // Title
             if (!post.title.isNullOrBlank()) {
-                Text(
-                    text = post.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                Text(text = post.title, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                 Spacer(modifier = Modifier.height(4.dp))
             }
-            
+
             // Content
             Text(
-                text = post.content,
-                fontSize = 14.sp,
-                maxLines = 5,
-                overflow = TextOverflow.Ellipsis
+                    text = post.content,
+                    fontSize = 14.sp,
+                    maxLines = 5,
+                    overflow = TextOverflow.Ellipsis
             )
-            
+
             // Images
             if (!post.resourceUrls.isNullOrEmpty() && post.type == "IMAGE") {
                 Spacer(modifier = Modifier.height(8.dp))
                 // Show first image
                 AsyncImage(
-                    model = post.resourceUrls.first(),
-                    contentDescription = "Post image",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 300.dp)
-                        .clip(RoundedCornerShape(8.dp)),
-                    contentScale = ContentScale.Crop
+                        model = post.resourceUrls.first(),
+                        contentDescription = "Post image",
+                        modifier =
+                                Modifier.fillMaxWidth()
+                                        .heightIn(max = 300.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                        contentScale = ContentScale.Crop
                 )
                 if (post.resourceUrls.size > 1) {
                     Text(
-                        text = "+${post.resourceUrls.size - 1} ảnh khác",
-                        color = PrimaryBlue,
-                        fontSize = 12.sp,
-                        modifier = Modifier.padding(top = 4.dp)
+                            text = "+${post.resourceUrls.size - 1} ảnh khác",
+                            color = PrimaryBlue,
+                            fontSize = 12.sp,
+                            modifier = Modifier.padding(top = 4.dp)
                     )
                 }
             }
-            
+
             // Stats row
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 // Likes
                 if (post.reactionCount > 0) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
-                            Icons.Default.ThumbUp,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = PrimaryBlue
+                                Icons.Default.ThumbUp,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp),
+                                tint = PrimaryBlue
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "${post.reactionCount}",
-                            color = DarkGray,
-                            fontSize = 12.sp
-                        )
+                        Text(text = "${post.reactionCount}", color = DarkGray, fontSize = 12.sp)
                     }
                 }
-                
+
                 // Comments
                 if (post.commentCount > 0) {
                     Text(
-                        text = "${post.commentCount} bình luận",
-                        color = DarkGray,
-                        fontSize = 12.sp
+                            text = "${post.commentCount} bình luận",
+                            color = DarkGray,
+                            fontSize = 12.sp
                     )
                 }
             }
-            
+
             HorizontalDivider()
-            
+
             // Action buttons
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 // Like button
                 TextButton(onClick = onLikeClick) {
                     Icon(
-                        imageVector = if (post.userReaction != null) Icons.Filled.ThumbUp else Icons.Default.ThumbUp,
-                        contentDescription = "Like",
-                        tint = if (post.userReaction != null) PrimaryBlue else DarkGray
+                            imageVector =
+                                    if (post.userReaction != null) Icons.Filled.ThumbUp
+                                    else Icons.Default.ThumbUp,
+                            contentDescription = "Like",
+                            tint = if (post.userReaction != null) PrimaryBlue else DarkGray
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        "Thích",
-                        color = if (post.userReaction != null) PrimaryBlue else DarkGray
-                    )
+                    Text("Thích", color = if (post.userReaction != null) PrimaryBlue else DarkGray)
                 }
-                
+
                 // Comment button
                 TextButton(onClick = onCommentClick) {
-                    Icon(
-                        Icons.Default.Edit,
-                        contentDescription = "Comment",
-                        tint = DarkGray
-                    )
+                    Icon(Icons.Default.Edit, contentDescription = "Comment", tint = DarkGray)
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Bình luận", color = DarkGray)
                 }
