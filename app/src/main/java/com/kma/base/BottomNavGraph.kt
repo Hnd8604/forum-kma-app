@@ -49,12 +49,13 @@ fun BottomNavGraph(
             )
         }
         composable<NavScreen.Profile> {
-            ProfileScreen(onLogout = onLogout)
+            ProfileScreen()
         }
         composable<NavScreen.Settings> {
             SettingsScreen(
                 currentTheme = currentTheme,
-                onThemeSelected = onThemeSelected
+                onThemeSelected = onThemeSelected,
+                onLogout = onLogout
             )
         }
     }

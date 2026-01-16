@@ -39,7 +39,6 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     userId: String? = null,
     viewModel: ProfileViewModel = viewModel(),
-    onLogout: () -> Unit = {},
     onNavigateToChat: (String) -> Unit = {},
     onNavigateToEditProfile: () -> Unit = {},
     onNavigateToPost: (String) -> Unit = {}
@@ -117,7 +116,6 @@ fun ProfileScreen(
                     modifier = modifier.padding(paddingValues),
                     state = state,
                     viewModel = viewModel,
-                    onLogout = onLogout,
                     onNavigateToChat = onNavigateToChat,
                     onNavigateToPost = onNavigateToPost
                 )
@@ -131,7 +129,6 @@ private fun ProfileContent(
     modifier: Modifier = Modifier,
     state: com.kma.base.viewmodel.ProfileState,
     viewModel: ProfileViewModel,
-    onLogout: () -> Unit,
     onNavigateToChat: (String) -> Unit,
     onNavigateToPost: (String) -> Unit
 ) {
@@ -233,33 +230,9 @@ private fun ProfileContent(
             }
         }
         
-        // Logout Button (only for own profile)
-        if (state.isOwnProfile) {
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(
-                    onClick = onLogout,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.error
-                    ),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.baseline_logout_24),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Đăng xuất",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+        // Thêm padding bottom
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

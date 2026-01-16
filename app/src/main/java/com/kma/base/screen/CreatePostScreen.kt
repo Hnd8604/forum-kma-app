@@ -26,8 +26,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kma.base.data.model.GroupResponse
+import com.kma.base.viewmodel.CreatePostViewModel
 
 // Colors
 private val PrimaryBlue = Color(0xFF1877F2)
@@ -40,38 +42,44 @@ fun CreatePostScreen(
     onBackClick: () -> Unit,
     onPostCreated: () -> Unit,
     selectedGroupId: String? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: CreatePostViewModel = viewModel()
 ) {
-    var title by remember { mutableStateOf("") }
-    var content by remember { mutableStateOf("") }
-    var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
-    var selectedGroup by remember { mutableStateOf<GroupResponse?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
     var showGroupPicker by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    // Set context for ViewModel
+    LaunchedEffect(Unit) {
+        viewModel.setContext(context)
+    }
 
     // Image picker
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetMultipleContents()
     ) { uris ->
         if (uris.isNotEmpty()) {
-            // Limit to 10 images
-            selectedImages = (selectedImages + uris).take(10)
+            viewModel.addImages(uris)
         }
     }
 
-    // Available groups for selection
-    var availableGroups by remember { mutableStateOf<List<GroupResponse>>(emptyList()) }
-
-    // TODO: Load groups from repository
-    LaunchedEffect(Unit) {
-        // Load my groups
+    // Handle success
+    LaunchedEffect(uiState.isSuccess) {
+        if (uiState.isSuccess) {
+            onPostCreated()
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Tạo bài viết") },
+                title = { 
+                    if (uiState.isUploadingImages) {
+                        Text(uiState.uploadProgress)
+                    } else {
+                        Text("Tạo bài viết")
+                    }
+                },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
@@ -79,20 +87,11 @@ fun CreatePostScreen(
                 },
                 actions = {
                     Button(
-                        onClick = {
-                            // Validate
-                            if (content.isBlank()) {
-                                errorMessage = "Vui lòng nhập nội dung bài viết"
-                                return@Button
-                            }
-                            isLoading = true
-                            // TODO: Create post via API
-                            // Upload images first, then create post with URLs
-                        },
-                        enabled = !isLoading && content.isNotBlank(),
+                        onClick = { viewModel.createPost() },
+                        enabled = !uiState.isLoading && uiState.content.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
                     ) {
-                        if (isLoading) {
+                        if (uiState.isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 color = Color.White,
@@ -139,7 +138,7 @@ fun CreatePostScreen(
 
                 Column {
                     Text(
-                        text = "Bạn",  // TODO: Get current user name
+                        text = "Bạn",
                         fontWeight = FontWeight.SemiBold,
                         fontSize = 16.sp
                     )
@@ -155,14 +154,14 @@ fun CreatePostScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = if (selectedGroup == null) Icons.Default.Star else Icons.Default.Face,
+                                imageVector = if (uiState.selectedGroup == null) Icons.Default.Star else Icons.Default.Face,
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp),
                                 tint = DarkGray
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
-                                text = selectedGroup?.displayName ?: "Chọn nhóm",
+                                text = uiState.selectedGroup?.displayName ?: "Chọn nhóm",
                                 fontSize = 12.sp,
                                 color = DarkGray
                             )
@@ -181,8 +180,8 @@ fun CreatePostScreen(
 
             // Title input
             OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
+                value = uiState.title,
+                onValueChange = { viewModel.updateTitle(it) },
                 placeholder = { 
                     Text(
                         "Tiêu đề (không bắt buộc)",
@@ -205,10 +204,10 @@ fun CreatePostScreen(
 
             // Content input
             OutlinedTextField(
-                value = content,
+                value = uiState.content,
                 onValueChange = { 
-                    content = it 
-                    errorMessage = null
+                    viewModel.updateContent(it)
+                    viewModel.clearError()
                 },
                 placeholder = { 
                     Text(
@@ -225,21 +224,21 @@ fun CreatePostScreen(
                     focusedBorderColor = Color.Transparent
                 ),
                 textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
-                isError = errorMessage != null,
-                supportingText = errorMessage?.let { 
+                isError = uiState.error != null,
+                supportingText = uiState.error?.let { 
                     { Text(it, color = MaterialTheme.colorScheme.error) } 
                 }
             )
 
             // Selected images
-            if (selectedImages.isNotEmpty()) {
+            if (uiState.selectedImages.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 LazyRow(
                     modifier = Modifier.padding(horizontal = 16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    items(selectedImages) { uri ->
+                    items(uiState.selectedImages) { uri ->
                         Box {
                             AsyncImage(
                                 model = uri,
@@ -252,9 +251,7 @@ fun CreatePostScreen(
                             
                             // Remove button
                             IconButton(
-                                onClick = { 
-                                    selectedImages = selectedImages.filter { it != uri }
-                                },
+                                onClick = { viewModel.removeImage(uri) },
                                 modifier = Modifier
                                     .align(Alignment.TopEnd)
                                     .size(24.dp)
@@ -271,7 +268,7 @@ fun CreatePostScreen(
                     }
 
                     // Add more button
-                    if (selectedImages.size < 10) {
+                    if (uiState.selectedImages.size < 10) {
                         item {
                             Box(
                                 modifier = Modifier
@@ -304,7 +301,7 @@ fun CreatePostScreen(
                 }
 
                 Text(
-                    text = "${selectedImages.size}/10 ảnh",
+                    text = "${uiState.selectedImages.size}/10 ảnh",
                     fontSize = 12.sp,
                     color = DarkGray,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
@@ -400,10 +397,11 @@ fun CreatePostScreen(
     // Group picker dialog
     if (showGroupPicker) {
         GroupPickerDialog(
-            groups = availableGroups,
-            selectedGroup = selectedGroup,
+            groups = uiState.availableGroups,
+            selectedGroup = uiState.selectedGroup,
+            isLoading = uiState.isLoadingGroups,
             onSelect = { group ->
-                selectedGroup = group
+                viewModel.selectGroup(group)
                 showGroupPicker = false
             },
             onDismiss = { showGroupPicker = false }
@@ -415,6 +413,7 @@ fun CreatePostScreen(
 private fun GroupPickerDialog(
     groups: List<GroupResponse>,
     selectedGroup: GroupResponse?,
+    isLoading: Boolean = false,
     onSelect: (GroupResponse?) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -423,63 +422,54 @@ private fun GroupPickerDialog(
         title = { Text("Chọn nhóm") },
         text = {
             Column {
-                // Option: No group
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelect(null) }
-                        .padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = if (selectedGroup == null) PrimaryBlue else DarkGray
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Text(
-                        text = "Không chọn nhóm",
-                        fontWeight = if (selectedGroup == null) FontWeight.Bold else FontWeight.Normal
-                    )
-                }
-
-                HorizontalDivider()
-
-                // Groups list
-                groups.forEach { group ->
-                    Row(
+                if (isLoading) {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { onSelect(group) }
-                            .padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Face,
-                            contentDescription = null,
-                            tint = if (selectedGroup?.groupId == group.groupId) PrimaryBlue else DarkGray
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text(
-                                text = group.displayName,
-                                fontWeight = if (selectedGroup?.groupId == group.groupId) FontWeight.Bold else FontWeight.Normal
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    // Option: No group - removed, user MUST select a group
+                    
+                    // Groups list
+                    groups.forEach { group ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(group) }
+                                .padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Face,
+                                contentDescription = null,
+                                tint = if (selectedGroup?.groupId == group.groupId) PrimaryBlue else DarkGray
                             )
-                            Text(
-                                text = "${group.memberCount} thành viên",
-                                fontSize = 12.sp,
-                                color = DarkGray
-                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = group.displayName,
+                                    fontWeight = if (selectedGroup?.groupId == group.groupId) FontWeight.Bold else FontWeight.Normal
+                                )
+                                Text(
+                                    text = "${group.memberCount} thành viên",
+                                    fontSize = 12.sp,
+                                    color = DarkGray
+                                )
+                            }
                         }
                     }
-                }
 
-                if (groups.isEmpty()) {
-                    Text(
-                        text = "Bạn chưa tham gia nhóm nào",
-                        color = DarkGray,
-                        modifier = Modifier.padding(12.dp)
-                    )
+                    if (groups.isEmpty()) {
+                        Text(
+                            text = "Bạn chưa tham gia nhóm nào.\nHãy tham gia nhóm trước khi đăng bài.",
+                            color = DarkGray,
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
                 }
             }
         },

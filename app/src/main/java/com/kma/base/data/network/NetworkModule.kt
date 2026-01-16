@@ -97,4 +97,8 @@ object NetworkModule {
     val notificationApi: NotificationApiService by lazy {
         retrofit.create(NotificationApiService::class.java)
     }
+    
+    val fileApi: FileApiService by lazy {
+        retrofit.create(FileApiService::class.java)
+    }
 }

@@ -11,11 +11,20 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -23,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -36,6 +46,7 @@ import com.kma.base.model.AppTheme
 fun SettingsScreen(
     currentTheme: AppTheme = AppTheme.SYSTEM,
     onThemeSelected: (AppTheme) -> Unit = {},
+    onLogout: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -45,6 +56,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
             Text(
@@ -55,15 +67,10 @@ fun SettingsScreen(
                 modifier = Modifier.padding(vertical = 16.dp)
             )
             
-            Spacer(modifier = Modifier.height(8.dp))
+            // ===== Giao diện Section =====
+            SettingsSectionHeader(title = "Giao diện")
             
-            Text(
-                text = "Giao diện",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onBackground,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
+            Spacer(modifier = Modifier.height(8.dp))
             
             // System Mode Card
             ThemeOptionCard(
@@ -79,7 +86,7 @@ fun SettingsScreen(
             
             // Light Mode Card
             ThemeOptionCard(
-                title = "Light Mode",
+                title = "Sáng",
                 description = "Giao diện sáng",
                 iconRes = R.drawable.brightness_7_24px,
                 currentTheme = currentTheme,
@@ -91,12 +98,157 @@ fun SettingsScreen(
             
             // Dark Mode Card
             ThemeOptionCard(
-                title = "Dark Mode",
+                title = "Tối",
                 description = "Giao diện tối",
                 iconRes = R.drawable.brightness_4_24px,
                 currentTheme = currentTheme,
                 targetTheme = AppTheme.DARK,
                 onClick = { onThemeSelected(AppTheme.DARK) }
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // ===== Thông báo Section =====
+            SettingsSectionHeader(title = "Thông báo")
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            SettingsMenuItem(
+                icon = Icons.Default.Notifications,
+                title = "Cài đặt thông báo",
+                description = "Quản lý thông báo đẩy",
+                onClick = { /* TODO */ }
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // ===== Bảo mật Section =====
+            SettingsSectionHeader(title = "Bảo mật")
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            SettingsMenuItem(
+                icon = Icons.Default.Lock,
+                title = "Đổi mật khẩu",
+                description = "Thay đổi mật khẩu đăng nhập",
+                onClick = { /* TODO */ }
+            )
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // ===== Thông tin Section =====
+            SettingsSectionHeader(title = "Thông tin")
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            SettingsMenuItem(
+                icon = Icons.Default.Info,
+                title = "Về ứng dụng",
+                description = "Phiên bản 1.0.0",
+                onClick = { /* TODO */ }
+            )
+            
+            Spacer(modifier = Modifier.height(32.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // ===== Logout Button =====
+            Button(
+                onClick = onLogout,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_logout_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Đăng xuất",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+fun SettingsSectionHeader(title: String) {
+    Text(
+        text = title,
+        fontSize = 14.sp,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(vertical = 4.dp)
+    )
+}
+
+@Composable
+fun SettingsMenuItem(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = title,
+                modifier = Modifier.size(28.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = description,
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+            }
+            
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             )
         }
     }

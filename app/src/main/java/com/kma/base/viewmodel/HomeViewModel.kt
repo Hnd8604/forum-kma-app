@@ -1,8 +1,10 @@
 package com.kma.base.viewmodel
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.base.data.model.PostWithInteractionResponse
+import com.kma.base.data.network.NetworkModule
 import com.kma.base.data.repository.PostRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +22,7 @@ data class HomeUiState(
 
 class HomeViewModel : ViewModel() {
     private val postRepository = PostRepository()
+    private val interactionApi = NetworkModule.interactionApi
     
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -86,8 +89,47 @@ class HomeViewModel : ViewModel() {
                 )
             }
             
-            // TODO: Call API to toggle like
-            // If API fails, revert the optimistic update
+            try {
+                if (isCurrentlyLiked) {
+                    // Remove like
+                    val response = interactionApi.removeReaction(postId)
+                    Log.d("HomeVM", "Remove like response: ${response.code}")
+                    if (response.code != "200") {
+                        // Revert if failed
+                        revertLike(postId, isCurrentlyLiked)
+                    }
+                } else {
+                    // Add like
+                    val response = interactionApi.reactToPost(mapOf(
+                        "postId" to postId,
+                        "type" to "LIKE"
+                    ))
+                    Log.d("HomeVM", "Add like response: ${response.code}")
+                    if (response.code != "200") {
+                        // Revert if failed
+                        revertLike(postId, isCurrentlyLiked)
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("HomeVM", "Error toggling like", e)
+                // Revert on error
+                revertLike(postId, isCurrentlyLiked)
+            }
+        }
+    }
+    
+    private fun revertLike(postId: String, wasLiked: Boolean) {
+        _uiState.update { state ->
+            state.copy(
+                posts = state.posts.map { post ->
+                    if (post.id == postId) {
+                        post.copy(
+                            reactionCount = if (wasLiked) post.reactionCount + 1 else post.reactionCount - 1,
+                            userReaction = if (wasLiked) "LIKE" else null
+                        )
+                    } else post
+                }
+            )
         }
     }
 }

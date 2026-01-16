@@ -2,6 +2,7 @@ package com.kma.base.data.api
 
 import com.google.gson.annotations.SerializedName
 import com.kma.base.data.model.*
+import okhttp3.MultipartBody
 import retrofit2.http.*
 
 interface AuthApiService {
@@ -215,3 +216,38 @@ interface NotificationApiService {
     @GET("notifications/unread-count")
     suspend fun getUnreadCount(): ApiResponse<Int>
 }
+
+interface FileApiService {
+    @Multipart
+    @POST("files/upload/image")
+    suspend fun uploadImage(
+        @Part file: MultipartBody.Part
+    ): ApiResponse<UploadResponse>
+    
+    @Multipart
+    @POST("files/upload/video")
+    suspend fun uploadVideo(
+        @Part file: MultipartBody.Part
+    ): ApiResponse<UploadResponse>
+    
+    @Multipart
+    @POST("files/upload/document")
+    suspend fun uploadDocument(
+        @Part file: MultipartBody.Part
+    ): ApiResponse<UploadResponse>
+    
+    @Multipart
+    @POST("files/upload/avatar")
+    suspend fun uploadAvatar(
+        @Part file: MultipartBody.Part
+    ): ApiResponse<UploadResponse>
+    
+    @DELETE("files/delete")
+    suspend fun deleteFile(@Query("url") url: String): ApiResponse<Any>
+}
+
+// Upload Response
+data class UploadResponse(
+    @SerializedName("resourceUrl")
+    val resourceUrl: String
+)

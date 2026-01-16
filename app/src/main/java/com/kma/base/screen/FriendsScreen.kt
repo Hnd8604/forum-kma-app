@@ -20,9 +20,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.kma.base.data.model.FriendInfo
 import com.kma.base.data.model.FriendRequest
+import com.kma.base.viewmodel.FriendsViewModel
 
 // Colors
 private val PrimaryBlue = Color(0xFF1877F2)
@@ -36,21 +38,21 @@ private val RedAccent = Color(0xFFE53935)
 fun FriendsScreen(
     onBackClick: () -> Unit,
     onFriendClick: (String) -> Unit,
+    viewModel: FriendsViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
     var selectedTab by remember { mutableStateOf(0) }
     val tabs = listOf("Bạn bè", "Lời mời", "Gợi ý")
-
-    var friends by remember { mutableStateOf<List<FriendInfo>>(emptyList()) }
-    var requests by remember { mutableStateOf<List<FriendRequest>>(emptyList()) }
-    var suggestions by remember { mutableStateOf<List<FriendInfo>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    // TODO: Load data from repository
-    LaunchedEffect(selectedTab) {
-        isLoading = true
-        // Load based on selected tab
-        isLoading = false
+    
+    val state by viewModel.state.collectAsState()
+    val snackbarHostState = remember { SnackbarHostState() }
+    
+    // Show snackbar when action message changes
+    LaunchedEffect(state.actionMessage) {
+        state.actionMessage?.let { message ->
+            snackbarHostState.showSnackbar(message)
+            viewModel.clearMessage()
+        }
     }
 
     Scaffold(
@@ -68,7 +70,8 @@ fun FriendsScreen(
                     }
                 }
             )
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
         Column(
             modifier = modifier
@@ -78,8 +81,8 @@ fun FriendsScreen(
             // Tabs
             TabRow(
                 selectedTabIndex = selectedTab,
-                containerColor = Color.White,
-                contentColor = PrimaryBlue
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = MaterialTheme.colorScheme.primary
             ) {
                 tabs.forEachIndexed { index, title ->
                     Tab(
@@ -88,9 +91,9 @@ fun FriendsScreen(
                         text = {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(title)
-                                if (index == 1 && requests.isNotEmpty()) {
+                                if (index == 1 && state.requests.isNotEmpty()) {
                                     Spacer(modifier = Modifier.width(4.dp))
-                                    Badge { Text("${requests.size}") }
+                                    Badge { Text("${state.requests.size}") }
                                 }
                             }
                         }
@@ -99,7 +102,7 @@ fun FriendsScreen(
             }
 
             // Content
-            if (isLoading) {
+            if (state.isLoading) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -108,15 +111,15 @@ fun FriendsScreen(
                 }
             } else {
                 when (selectedTab) {
-                    0 -> FriendsList(friends = friends, onFriendClick = onFriendClick)
+                    0 -> FriendsList(friends = state.friends, onFriendClick = onFriendClick)
                     1 -> FriendRequestsList(
-                        requests = requests,
-                        onAccept = { /* Accept request */ },
-                        onReject = { /* Reject request */ }
+                        requests = state.requests,
+                        onAccept = { viewModel.acceptRequest(it) },
+                        onReject = { viewModel.rejectRequest(it) }
                     )
                     2 -> FriendSuggestionsList(
-                        suggestions = suggestions,
-                        onAddFriend = { /* Send friend request */ },
+                        suggestions = state.suggestions,
+                        onAddFriend = { viewModel.sendFriendRequest(it.userId) },
                         onProfileClick = onFriendClick
                     )
                 }

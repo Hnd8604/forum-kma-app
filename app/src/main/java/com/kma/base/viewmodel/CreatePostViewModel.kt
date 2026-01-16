@@ -1,6 +1,8 @@
 package com.kma.base.viewmodel
 
+import android.content.Context
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kma.base.data.model.CreatePostRequest
@@ -12,6 +14,13 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import java.io.File
+import java.io.FileOutputStream
+
+private const val TAG = "CreatePostViewModel"
 
 data class CreatePostUiState(
     val title: String = "",
@@ -21,6 +30,8 @@ data class CreatePostUiState(
     val availableGroups: List<GroupResponse> = emptyList(),
     val isLoading: Boolean = false,
     val isLoadingGroups: Boolean = false,
+    val isUploadingImages: Boolean = false,
+    val uploadProgress: String = "",
     val isSuccess: Boolean = false,
     val error: String? = null
 )
@@ -28,9 +39,16 @@ data class CreatePostUiState(
 class CreatePostViewModel : ViewModel() {
     private val postRepository = PostRepository()
     private val groupApi = NetworkModule.groupApi
+    private val fileApi = NetworkModule.fileApi
+    
+    private var appContext: Context? = null
     
     private val _uiState = MutableStateFlow(CreatePostUiState())
     val uiState: StateFlow<CreatePostUiState> = _uiState.asStateFlow()
+    
+    fun setContext(context: Context) {
+        appContext = context.applicationContext
+    }
     
     init {
         loadMyGroups()
@@ -88,6 +106,7 @@ class CreatePostViewModel : ViewModel() {
     
     fun createPost() {
         val state = _uiState.value
+        val context = appContext
         
         // Validation
         if (state.content.isBlank()) {
@@ -104,10 +123,32 @@ class CreatePostViewModel : ViewModel() {
             _uiState.update { it.copy(isLoading = true, error = null) }
             
             try {
-                // TODO: Upload images first if any, get URLs
-                val resourceUrls: List<String> = emptyList()
+                // Upload images first if any
+                val resourceUrls = mutableListOf<String>()
                 
-                val postType = if (state.selectedImages.isNotEmpty()) "IMAGE" else "TEXT"
+                if (state.selectedImages.isNotEmpty() && context != null) {
+                    _uiState.update { it.copy(isUploadingImages = true, uploadProgress = "Đang tải ảnh...") }
+                    
+                    for ((index, uri) in state.selectedImages.withIndex()) {
+                        _uiState.update { 
+                            it.copy(uploadProgress = "Đang tải ảnh ${index + 1}/${state.selectedImages.size}...") 
+                        }
+                        
+                        try {
+                            val url = uploadImage(context, uri)
+                            if (url != null) {
+                                resourceUrls.add(url)
+                                Log.d(TAG, "Uploaded image: $url")
+                            }
+                        } catch (e: Exception) {
+                            Log.e(TAG, "Failed to upload image", e)
+                        }
+                    }
+                    
+                    _uiState.update { it.copy(isUploadingImages = false, uploadProgress = "") }
+                }
+                
+                val postType = if (resourceUrls.isNotEmpty()) "IMAGE" else "TEXT"
                 
                 val request = CreatePostRequest(
                     title = state.title,
@@ -117,13 +158,16 @@ class CreatePostViewModel : ViewModel() {
                     resourceUrls = resourceUrls.ifEmpty { null }
                 )
                 
+                Log.d(TAG, "Creating post with ${resourceUrls.size} images")
                 val result = postRepository.createPost(request)
                 
                 result.onSuccess {
+                    Log.d(TAG, "Post created successfully")
                     _uiState.update { 
                         it.copy(isLoading = false, isSuccess = true)
                     }
                 }.onFailure { error ->
+                    Log.e(TAG, "Failed to create post: ${error.message}")
                     _uiState.update { 
                         it.copy(
                             isLoading = false, 
@@ -132,6 +176,7 @@ class CreatePostViewModel : ViewModel() {
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Error creating post", e)
                 _uiState.update { 
                     it.copy(
                         isLoading = false,
@@ -139,6 +184,40 @@ class CreatePostViewModel : ViewModel() {
                     )
                 }
             }
+        }
+    }
+    
+    private suspend fun uploadImage(context: Context, uri: Uri): String? {
+        return try {
+            // Get input stream from URI
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            
+            // Create temp file
+            val tempFile = File(context.cacheDir, "upload_${System.currentTimeMillis()}.jpg")
+            FileOutputStream(tempFile).use { output ->
+                inputStream.copyTo(output)
+            }
+            inputStream.close()
+            
+            // Create multipart
+            val requestBody = tempFile.asRequestBody("image/*".toMediaTypeOrNull())
+            val part = MultipartBody.Part.createFormData("file", tempFile.name, requestBody)
+            
+            // Upload
+            val response = fileApi.uploadImage(part)
+            
+            // Delete temp file
+            tempFile.delete()
+            
+            if (response.code == "200" && response.result != null) {
+                response.result.resourceUrl
+            } else {
+                Log.e(TAG, "Upload failed: ${response.message}")
+                null
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Upload exception", e)
+            null
         }
     }
     

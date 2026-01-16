@@ -19,16 +19,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.kma.base.data.model.CommentResponse
 import com.kma.base.data.model.PostWithInteractionResponse
-import com.kma.base.data.model.ReactionType
-import java.text.SimpleDateFormat
-import java.util.*
-
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.base.viewmodel.PostDetailViewModel
 
@@ -47,7 +42,6 @@ fun PostDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var commentText by remember { mutableStateOf("") }
-    var showReactionPicker by remember { mutableStateOf(false) }
 
     // Load data
     LaunchedEffect(postId) {
@@ -64,9 +58,6 @@ fun PostDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* Share */ }) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
-                    }
                     IconButton(onClick = { /* More options */ }) {
                         Icon(Icons.Default.MoreVert, contentDescription = "More")
                     }
@@ -123,12 +114,9 @@ fun PostDetailScreen(
                 item {
                     PostDetailContent(
                         post = uiState.post,
-                        currentReaction = uiState.userReaction?.let { 
-                            try { ReactionType.valueOf(it) } catch (e: Exception) { null }
-                        },
-                        onReactionClick = { showReactionPicker = true },
-                        onCommentClick = { /* Focus comment input */ },
-                        onShareClick = { /* Share */ }
+                        isLiked = uiState.userReaction != null,
+                        onLikeClick = { viewModel.toggleReaction(postId) },
+                        onCommentClick = { /* Focus comment input */ }
                     )
                 }
 
@@ -194,29 +182,14 @@ fun PostDetailScreen(
             }
         }
     }
-
-    // Reaction picker dialog
-    if (showReactionPicker) {
-        ReactionPickerDialog(
-            currentReaction = uiState.userReaction?.let { 
-                try { ReactionType.valueOf(it) } catch (e: Exception) { null }
-            },
-            onSelect = { reaction ->
-                showReactionPicker = false
-                viewModel.toggleReaction(postId)
-            },
-            onDismiss = { showReactionPicker = false }
-        )
-    }
 }
 
 @Composable
 private fun PostDetailContent(
     post: PostWithInteractionResponse?,
-    currentReaction: ReactionType?,
-    onReactionClick: () -> Unit,
+    isLiked: Boolean,
+    onLikeClick: () -> Unit,
     onCommentClick: () -> Unit,
-    onShareClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.padding(16.dp)) {
@@ -326,25 +299,25 @@ private fun PostDetailContent(
 
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-        // Action buttons
+        // Action buttons - only Like and Comment
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
             // Like button
             TextButton(
-                onClick = onReactionClick,
+                onClick = onLikeClick,
                 colors = ButtonDefaults.textButtonColors(
-                    contentColor = if (currentReaction != null) PrimaryBlue else DarkGray
+                    contentColor = if (isLiked) PrimaryBlue else DarkGray
                 )
             ) {
                 Icon(
-                    imageVector = if (currentReaction != null) Icons.Default.ThumbUp else Icons.Default.ThumbUp,
+                    imageVector = if (isLiked) Icons.Filled.ThumbUp else Icons.Default.ThumbUp,
                     contentDescription = "Like",
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(currentReaction?.displayName ?: "Thích")
+                Text(if (isLiked) "Đã thích" else "Thích")
             }
 
             // Comment button
@@ -353,26 +326,12 @@ private fun PostDetailContent(
                 colors = ButtonDefaults.textButtonColors(contentColor = DarkGray)
             ) {
                 Icon(
-                    imageVector = Icons.Default.MailOutline,
+                    imageVector = Icons.Default.Edit,
                     contentDescription = "Comment",
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text("Bình luận")
-            }
-
-            // Share button
-            TextButton(
-                onClick = onShareClick,
-                colors = ButtonDefaults.textButtonColors(contentColor = DarkGray)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Share,
-                    contentDescription = "Share",
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text("Chia sẻ")
             }
         }
     }
@@ -546,53 +505,11 @@ private fun CommentInputBar(
     }
 }
 
-@Composable
-private fun ReactionPickerDialog(
-    currentReaction: ReactionType?,
-    onSelect: (ReactionType) -> Unit,
-    onDismiss: () -> Unit
-) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("Chọn cảm xúc") },
-        text = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                ReactionType.values().forEach { reaction ->
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clickable { onSelect(reaction) }
-                            .padding(8.dp)
-                    ) {
-                        Text(
-                            text = reaction.emoji,
-                            fontSize = 32.sp
-                        )
-                        Text(
-                            text = reaction.displayName,
-                            fontSize = 10.sp,
-                            color = if (currentReaction == reaction) PrimaryBlue else DarkGray
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Đóng")
-            }
-        }
-    )
-}
-
 private fun formatTimeAgo(isoDate: String): String {
     return try {
-        val format = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        val format = java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", java.util.Locale.getDefault())
         val date = format.parse(isoDate) ?: return isoDate
-        val now = Date()
+        val now = java.util.Date()
         val diff = now.time - date.time
 
         val seconds = diff / 1000
@@ -605,7 +522,7 @@ private fun formatTimeAgo(isoDate: String): String {
             minutes < 60 -> "${minutes}p"
             hours < 24 -> "${hours}h"
             days < 7 -> "${days}d"
-            else -> SimpleDateFormat("dd/MM", Locale.getDefault()).format(date)
+            else -> java.text.SimpleDateFormat("dd/MM", java.util.Locale.getDefault()).format(date)
         }
     } catch (e: Exception) {
         isoDate
