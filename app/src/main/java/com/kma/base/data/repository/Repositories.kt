@@ -266,7 +266,7 @@ class ChatRepository {
         return try {
             val response = api.getMessages(conversationId)
             if (response.code == "200" && response.result != null) {
-                Result.success(response.result)
+                Result.success(response.result.content)
             } else {
                 Result.failure(Exception(response.message))
             }
@@ -275,9 +275,24 @@ class ChatRepository {
         }
     }
     
-    suspend fun sendMessage(conversationId: String, content: String): Result<ChatMessageResponse> {
+    suspend fun sendMessage(
+        conversationId: String?,
+        receiverId: String?,
+        groupId: String?,
+        message: String,
+        type: String = "TEXT",
+        resourceUrls: List<String>? = null
+    ): Result<ChatMessageResponse> {
         return try {
-            val response = api.sendMessage(SendMessageRequest(conversationId, content))
+            val request = SendMessageRequest(
+                conversationId = conversationId,
+                receiverId = receiverId,
+                groupId = groupId,
+                message = message,
+                type = type,
+                resourceUrls = resourceUrls
+            )
+            val response = api.sendMessage(request)
             if (response.code == "200" && response.result != null) {
                 Result.success(response.result)
             } else {

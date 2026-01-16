@@ -18,77 +18,46 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kma.base.R
+import com.kma.base.data.model.ConversationResponse
+import com.kma.base.viewmodel.ChatViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
-data class ChatMessage(
-    val id: String,
-    val name: String,
-    val lastMessage: String,
-    val timestamp: Long,
-    val unreadCount: Int = 0,
-    val isGroup: Boolean = false,
-    val avatarColor: Color
-)
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessagesScreen(modifier: Modifier = Modifier) {
+fun MessagesScreen(
+    modifier: Modifier = Modifier,
+    onChatClick: (conversationId: String, conversationName: String) -> Unit = { _, _ -> },
+    chatViewModel: ChatViewModel = viewModel()
+) {
+    val conversationsState by chatViewModel.conversationsState.collectAsState()
     var searchQuery by remember { mutableStateOf("") }
     
-    // Sample data - sẽ thay thế bằng data từ API
-    val sampleChats = remember {
-        listOf(
-            ChatMessage(
-                id = "1",
-                name = "Nhóm Lập trình Android",
-                lastMessage = "Phong: Mọi người đã làm bài tập chưa?",
-                timestamp = System.currentTimeMillis() - 300000,
-                unreadCount = 3,
-                isGroup = true,
-                avatarColor = Color(0xFF6200EE)
-            ),
-            ChatMessage(
-                id = "2",
-                name = "Nguyễn Văn A",
-                lastMessage = "Ok bạn, mai mình gặp nhé!",
-                timestamp = System.currentTimeMillis() - 3600000,
-                unreadCount = 0,
-                isGroup = false,
-                avatarColor = Color(0xFF03DAC6)
-            ),
-            ChatMessage(
-                id = "3",
-                name = "Nhóm TTCS K67",
-                lastMessage = "Hôm nay có buổi họp lúc 2h chiều",
-                timestamp = System.currentTimeMillis() - 7200000,
-                unreadCount = 5,
-                isGroup = true,
-                avatarColor = Color(0xFFFF6B6B)
-            ),
-            ChatMessage(
-                id = "4",
-                name = "Trần Thị B",
-                lastMessage = "Cảm ơn bạn nhiều!",
-                timestamp = System.currentTimeMillis() - 86400000,
-                unreadCount = 0,
-                isGroup = false,
-                avatarColor = Color(0xFF4ECDC4)
-            ),
-            ChatMessage(
-                id = "5",
-                name = "Nhóm Học tập K67",
-                lastMessage = "Ai có tài liệu môn CSDL không?",
-                timestamp = System.currentTimeMillis() - 172800000,
-                unreadCount = 1,
-                isGroup = true,
-                avatarColor = Color(0xFFFFBE0B)
-            )
-        )
+    // Load conversations on screen open
+    LaunchedEffect(Unit) {
+        chatViewModel.loadConversations()
+        chatViewModel.connectWebSocket()
+    }
+    
+    // Get current user ID for display
+    val currentUserId = chatViewModel.getCurrentUserId() ?: ""
+    
+    // Filter conversations by search query
+    val filteredConversations = remember(conversationsState.conversations, searchQuery) {
+        if (searchQuery.isBlank()) {
+            conversationsState.conversations
+        } else {
+            conversationsState.conversations.filter { conv ->
+                conv.getDisplayName(currentUserId)
+                    .contains(searchQuery, ignoreCase = true)
+            }
+        }
     }
     
     Scaffold(
@@ -123,18 +92,77 @@ fun MessagesScreen(modifier: Modifier = Modifier) {
                     .padding(horizontal = 16.dp, vertical = 8.dp)
             )
             
-            // Chat List
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
-            ) {
-                items(sampleChats) { chat ->
-                    ChatItem(
-                        chat = chat,
-                        onClick = {
-                            // TODO: Navigate to chat detail
+            // Content
+            when {
+                conversationsState.isLoading -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                
+                conversationsState.error != null -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = conversationsState.error ?: "Error",
+                                color = MaterialTheme.colorScheme.error,
+                                textAlign = TextAlign.Center
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(onClick = { chatViewModel.loadConversations() }) {
+                                Text("Thử lại")
+                            }
                         }
-                    )
+                    }
+                }
+                
+                filteredConversations.isEmpty() -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = if (searchQuery.isNotBlank()) {
+                                "Không tìm thấy cuộc trò chuyện"
+                            } else {
+                                "Chưa có tin nhắn nào\nHãy bắt đầu trò chuyện!"
+                            },
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+                
+                else -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 8.dp)
+                    ) {
+                        items(
+                            items = filteredConversations,
+                            key = { it.id }
+                        ) { conversation ->
+                            ConversationItem(
+                                conversation = conversation,
+                                currentUserId = currentUserId,
+                                onClick = {
+                                    chatViewModel.setCurrentConversation(conversation)
+                                    onChatClick(
+                                        conversation.id,
+                                        conversation.getDisplayName(currentUserId)
+                                    )
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -170,11 +198,22 @@ fun SearchBar(
 }
 
 @Composable
-fun ChatItem(
-    chat: ChatMessage,
+fun ConversationItem(
+    conversation: ConversationResponse,
+    currentUserId: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val displayName = conversation.getDisplayName(currentUserId)
+    val unreadCount = conversation.getUnreadCount(currentUserId)
+    val avatarColor = remember(conversation.id) {
+        val colors = listOf(
+            Color(0xFF6200EE), Color(0xFF03DAC6), Color(0xFFFF6B6B),
+            Color(0xFF4ECDC4), Color(0xFFFFBE0B), Color(0xFF845EC2)
+        )
+        colors[conversation.id.hashCode().mod(colors.size).let { if (it < 0) it + colors.size else it }]
+    }
+    
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -187,10 +226,10 @@ fun ChatItem(
             modifier = Modifier
                 .size(56.dp)
                 .clip(CircleShape)
-                .background(chat.avatarColor),
+                .background(avatarColor),
             contentAlignment = Alignment.Center
         ) {
-            if (chat.isGroup) {
+            if (conversation.isGroup) {
                 Icon(
                     painter = painterResource(id = R.drawable.baseline_group_24),
                     contentDescription = null,
@@ -219,7 +258,7 @@ fun ChatItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = chat.name,
+                    text = displayName,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -231,7 +270,7 @@ fun ChatItem(
                 Spacer(modifier = Modifier.width(8.dp))
                 
                 Text(
-                    text = formatTimestamp(chat.timestamp),
+                    text = formatConversationTime(conversation.lastMessageAt),
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -245,7 +284,7 @@ fun ChatItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = chat.lastMessage,
+                    text = conversation.lastMessage ?: "Bắt đầu trò chuyện",
                     fontSize = 14.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -253,7 +292,7 @@ fun ChatItem(
                     modifier = Modifier.weight(1f)
                 )
                 
-                if (chat.unreadCount > 0) {
+                if (unreadCount > 0) {
                     Spacer(modifier = Modifier.width(8.dp))
                     
                     Box(
@@ -264,7 +303,7 @@ fun ChatItem(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = if (chat.unreadCount > 9) "9+" else chat.unreadCount.toString(),
+                            text = if (unreadCount > 9) "9+" else unreadCount.toString(),
                             fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
@@ -276,18 +315,42 @@ fun ChatItem(
     }
 }
 
-fun formatTimestamp(timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
+private fun formatConversationTime(isoDate: String?): String {
+    if (isoDate.isNullOrBlank()) return ""
     
-    return when {
-        diff < 60000 -> "Vừa xong"
-        diff < 3600000 -> "${diff / 60000} phút"
-        diff < 86400000 -> "${diff / 3600000} giờ"
-        diff < 604800000 -> "${diff / 86400000} ngày"
-        else -> {
-            val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-            sdf.format(Date(timestamp))
+    return try {
+        val formats = listOf(
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.getDefault()),
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
+        )
+        
+        var date: Date? = null
+        for (format in formats) {
+            try {
+                format.timeZone = TimeZone.getTimeZone("UTC")
+                date = format.parse(isoDate)
+                if (date != null) break
+            } catch (e: Exception) {
+                continue
+            }
         }
+        
+        if (date == null) return ""
+        
+        val now = System.currentTimeMillis()
+        val diff = now - date.time
+        
+        when {
+            diff < 60000 -> "Vừa xong"
+            diff < 3600000 -> "${diff / 60000}p"
+            diff < 86400000 -> "${diff / 3600000}h"
+            diff < 604800000 -> "${diff / 86400000}d"
+            else -> {
+                val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+                sdf.format(date)
+            }
+        }
+    } catch (e: Exception) {
+        ""
     }
 }

@@ -12,7 +12,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object NetworkModule {
-    private const val BASE_URL = "http://72.60.198.235:8080/"
+    // BASE_URL từ Backend - thay đổi nếu cần
+    private const val BASE_URL = "http://72.60.198.235:8080/api/v1/"
     
     private lateinit var tokenManager: TokenManager
     
@@ -83,5 +84,17 @@ object NetworkModule {
     
     val chatApi: ChatApiService by lazy {
         retrofit.create(ChatApiService::class.java)
+    }
+    
+    val groupApi: GroupApiService by lazy {
+        retrofit.create(GroupApiService::class.java)
+    }
+    
+    val friendApi: FriendApiService by lazy {
+        retrofit.create(FriendApiService::class.java)
+    }
+    
+    val notificationApi: NotificationApiService by lazy {
+        retrofit.create(NotificationApiService::class.java)
     }
 }

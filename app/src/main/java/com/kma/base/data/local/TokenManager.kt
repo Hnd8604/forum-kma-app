@@ -90,6 +90,10 @@ class TokenManager(private val context: Context) {
         }
     }
     
+    suspend fun getUserIdSync(): String? {
+        return context.dataStore.data.first()[USER_ID_KEY]
+    }
+    
     fun getUserEmail(): Flow<String?> {
         return context.dataStore.data.map { preferences ->
             preferences[USER_EMAIL_KEY]

@@ -228,10 +228,13 @@ data class CreatePostRequest(
     val resourceUrls: List<String>? = null
 )
 
-// Chat Models
+// Chat Models - Updated to match Backend
 data class ConversationResponse(
     @SerializedName("id")
     val id: String,
+
+    @SerializedName("type")
+    val type: String? = null, // "private" or "group"
 
     @SerializedName("participantIds")
     val participantIds: List<String>,
@@ -239,52 +242,87 @@ data class ConversationResponse(
     @SerializedName("participantNames")
     val participantNames: Map<String, String>? = null,
 
+    @SerializedName("groupId")
+    val groupId: String? = null,
+
     @SerializedName("lastMessage")
     val lastMessage: String? = null,
 
-    @SerializedName("lastMessageTime")
-    val lastMessageTime: String? = null,
+    @SerializedName("lastMessageAt")
+    val lastMessageAt: String? = null,
 
-    @SerializedName("unreadCount")
-    val unreadCount: Int = 0,
-
-    @SerializedName("isGroup")
-    val isGroup: Boolean = false,
-
-    @SerializedName("groupName")
-    val groupName: String? = null,
+    @SerializedName("unreadCounts")
+    val unreadCounts: Map<String, Int>? = null,
 
     @SerializedName("createdAt")
-    val createdAt: String
-)
+    val createdAt: String? = null
+) {
+    val isGroup: Boolean get() = type == "group" || groupId != null
+    
+    fun getUnreadCount(userId: String): Int {
+        return unreadCounts?.get(userId) ?: 0
+    }
+    
+    fun getDisplayName(currentUserId: String): String {
+        return when {
+            isGroup -> participantNames?.values?.firstOrNull() ?: "Group Chat"
+            else -> {
+                // For private chat, get the other participant's name
+                val otherUserId = participantIds.firstOrNull { it != currentUserId }
+                participantNames?.get(otherUserId) ?: otherUserId ?: "Unknown"
+            }
+        }
+    }
+}
 
 data class ChatMessageResponse(
     @SerializedName("id")
     val id: String,
 
-    @SerializedName("conversationId")
-    val conversationId: String,
+    @SerializedName("fromUserId")
+    val fromUserId: String,
 
-    @SerializedName("senderId")
-    val senderId: String,
+    @SerializedName("toUserId")
+    val toUserId: String? = null,
+
+    @SerializedName("groupId")
+    val groupId: String? = null,
+
+    @SerializedName("conversationId")
+    val conversationId: String? = null,
+
+    @SerializedName("message")
+    val message: String? = null,
+
+    @SerializedName("type")
+    val type: String? = "TEXT", // TEXT, IMAGE, VIDEO, FILE, DELETE
+
+    @SerializedName("resourceUrls")
+    val resourceUrls: List<String>? = null,
+
+    @SerializedName("createdAt")
+    val createdAt: String? = null,
 
     @SerializedName("senderName")
-    val senderName: String? = null,
-
-    @SerializedName("content")
-    val content: String,
-
-    @SerializedName("timestamp")
-    val timestamp: String,
-
-    @SerializedName("read")
-    val read: Boolean = false
+    val senderName: String? = null
 )
 
 data class SendMessageRequest(
     @SerializedName("conversationId")
-    val conversationId: String,
+    val conversationId: String? = null,
 
-    @SerializedName("content")
-    val content: String
+    @SerializedName("groupId")
+    val groupId: String? = null,
+
+    @SerializedName("receiverId")
+    val receiverId: String? = null,
+
+    @SerializedName("message")
+    val message: String,
+
+    @SerializedName("type")
+    val type: String = "TEXT",
+
+    @SerializedName("resourceUrls")
+    val resourceUrls: List<String>? = null
 )

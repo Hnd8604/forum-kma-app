@@ -20,7 +20,12 @@ fun BottomNavGraph(
     startDestination: NavScreen,
     currentTheme: AppTheme,
     onThemeSelected: (AppTheme) -> Unit,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToPostDetail: (String) -> Unit = {},
+    onNavigateToCreatePost: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
+    onNavigateToChatDetail: (conversationId: String, conversationName: String) -> Unit = { _, _ -> }
 ) {
     NavHost(
         navController = navController,
@@ -31,10 +36,17 @@ fun BottomNavGraph(
         popExitTransition = { fadeOut() }
     ) {
         composable<NavScreen.Home> {
-            HomeScreen()
+            HomeScreen(
+                onPostClick = onNavigateToPostDetail,
+                onCreatePostClick = onNavigateToCreatePost,
+                onNotificationClick = onNavigateToNotifications,
+                onFriendsClick = onNavigateToFriends
+            )
         }
         composable<NavScreen.Messages> {
-            MessagesScreen()
+            MessagesScreen(
+                onChatClick = onNavigateToChatDetail
+            )
         }
         composable<NavScreen.Profile> {
             ProfileScreen(onLogout = onLogout)

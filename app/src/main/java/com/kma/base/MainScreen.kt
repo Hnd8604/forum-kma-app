@@ -26,7 +26,13 @@ import com.kma.base.model.BottomNavBarItem
 fun MainScreen(
     currentTheme: AppTheme,
     onThemeSelected: (AppTheme) -> Unit,
-    onLogout: () -> Unit = {}
+    onLogout: () -> Unit = {},
+    onNavigateToPostDetail: (String) -> Unit = {},
+    onNavigateToCreatePost: () -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
+    onNavigateToFriends: () -> Unit = {},
+    onNavigateToGroups: () -> Unit = {},
+    onNavigateToChatDetail: (conversationId: String, conversationName: String) -> Unit = { _, _ -> }
 ) {
     val navController = rememberNavController()
     val startDestination = NavScreen.Home
@@ -39,7 +45,12 @@ fun MainScreen(
             navController = navController,
             currentTheme = currentTheme,
             onThemeSelected = onThemeSelected,
-            onLogout = onLogout
+            onLogout = onLogout,
+            onNavigateToPostDetail = onNavigateToPostDetail,
+            onNavigateToCreatePost = onNavigateToCreatePost,
+            onNavigateToNotifications = onNavigateToNotifications,
+            onNavigateToFriends = onNavigateToFriends,
+            onNavigateToChatDetail = onNavigateToChatDetail
         )
     }
 }
@@ -79,12 +90,14 @@ fun RowScope.AddItem(
             Text(text = stringResource(id = screen.title))
         },
         icon = {
+            val iconVector = screen.icon
+            val iconResource = screen.iconRes
             when {
-                screen.icon != null -> {
-                    Icon(imageVector = screen.icon, contentDescription = "Navigation Icon")
+                iconVector != null -> {
+                    Icon(imageVector = iconVector, contentDescription = "Navigation Icon")
                 }
-                screen.iconRes != null -> {
-                    Icon(painter = painterResource(id = screen.iconRes), contentDescription = "Navigation Icon")
+                iconResource != null -> {
+                    Icon(painter = painterResource(id = iconResource), contentDescription = "Navigation Icon")
                 }
             }
         },
