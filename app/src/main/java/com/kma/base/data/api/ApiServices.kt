@@ -34,7 +34,7 @@ interface UserApiService {
     ): ApiResponse<PageResponse<UserResponse>>
     
     @PUT("users/me")
-    suspend fun updateProfile(@Body request: Map<String, Any>): ApiResponse<UserResponse>
+    suspend fun updateProfile(@Body request: UserUpdateRequest): ApiResponse<UserResponse>
 }
 
 interface PostApiService {
@@ -77,27 +77,43 @@ interface PostApiService {
 }
 
 interface InteractionApiService {
-    @POST("interactions/react")
+    // POST /interactions - Create or update interaction (toggle like)
+    @POST("interactions")
     suspend fun reactToPost(@Body request: Map<String, String>): ApiResponse<Any>
     
-    @DELETE("interactions/react")
+    // DELETE /interactions?postId=xxx - Remove interaction
+    @DELETE("interactions")
     suspend fun removeReaction(@Query("postId") postId: String): ApiResponse<Any>
     
-    @GET("interactions/post/{postId}/reactions")
-    suspend fun getPostReactions(@Path("postId") postId: String): ApiResponse<Map<String, Int>>
+    // GET /interactions/count?postId=xxx - Get reaction counts
+    @GET("interactions/count")
+    suspend fun getPostReactions(@Query("postId") postId: String): ApiResponse<Map<String, Int>>
+    
+    // GET /interactions/my-reaction?postId=xxx - Get user's current reaction
+    @GET("interactions/my-reaction")
+    suspend fun getMyReaction(@Query("postId") postId: String): ApiResponse<Any>
 }
 
 interface CommentApiService {
-    @GET("comments/post/{postId}")
+    // GET /comments/post?postId=xxx&page=0&size=20 - Get comments for a post
+    @GET("comments/post")
     suspend fun getCommentsByPost(
-        @Path("postId") postId: String,
+        @Query("postId") postId: String,
         @Query("page") page: Int = 0,
-        @Query("limit") limit: Int = 20
-    ): ApiResponse<PageResponse<Any>>
+        @Query("size") size: Int = 20  // Backend uses "size" not "limit"
+    ): ApiResponse<PageResponse<CommentResponse>>
     
+    // GET /comments/{commentId}/replies - Get replies for a comment
+    @GET("comments/{commentId}/replies")
+    suspend fun getReplies(
+        @Path("commentId") commentId: String
+    ): ApiResponse<List<CommentResponse>>
+    
+    // POST /comments - Create a comment
     @POST("comments")
-    suspend fun createComment(@Body request: Map<String, String>): ApiResponse<Any>
+    suspend fun createComment(@Body request: Map<String, String>): ApiResponse<CommentResponse>
     
+    // DELETE /comments/{id} - Delete a comment
     @DELETE("comments/{id}")
     suspend fun deleteComment(@Path("id") commentId: String): ApiResponse<Void>
 }

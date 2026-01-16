@@ -25,6 +25,7 @@ fun BottomNavGraph(
     onNavigateToCreatePost: () -> Unit = {},
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToFriends: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
     onNavigateToChatDetail: (conversationId: String, conversationName: String) -> Unit = { _, _ -> }
 ) {
     NavHost(
@@ -49,7 +50,9 @@ fun BottomNavGraph(
             )
         }
         composable<NavScreen.Profile> {
-            ProfileScreen()
+            ProfileScreen(
+                onNavigateToEditProfile = onNavigateToEditProfile
+            )
         }
         composable<NavScreen.Settings> {
             SettingsScreen(

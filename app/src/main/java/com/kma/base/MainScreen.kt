@@ -32,6 +32,7 @@ fun MainScreen(
     onNavigateToNotifications: () -> Unit = {},
     onNavigateToFriends: () -> Unit = {},
     onNavigateToGroups: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
     onNavigateToChatDetail: (conversationId: String, conversationName: String) -> Unit = { _, _ -> }
 ) {
     val navController = rememberNavController()
@@ -50,6 +51,7 @@ fun MainScreen(
             onNavigateToCreatePost = onNavigateToCreatePost,
             onNavigateToNotifications = onNavigateToNotifications,
             onNavigateToFriends = onNavigateToFriends,
+            onNavigateToEditProfile = onNavigateToEditProfile,
             onNavigateToChatDetail = onNavigateToChatDetail
         )
     }

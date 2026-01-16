@@ -42,7 +42,7 @@ data class CommentResponse(
     @SerializedName("reactionCount")
     val reactionCount: Int = 0,
 
-    @SerializedName("myReaction")
+    @SerializedName("userReactionType")  // Fixed: backend returns "userReactionType"
     val myReaction: String? = null,
 
     @SerializedName("createdAt")

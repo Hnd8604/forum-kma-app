@@ -85,11 +85,9 @@ class PostDetailViewModel : ViewModel() {
             try {
                 val response = commentApi.getCommentsByPost(postId)
                 if (response.code == "200" && response.result != null) {
-                    // Parse comments from response
-                    // Note: The API returns Any, we need to handle this properly
                     _uiState.update { 
                         it.copy(
-                            // comments = response.result.content.map { ... },
+                            comments = response.result.content,
                             isLoadingComments = false
                         )
                     }
@@ -97,6 +95,7 @@ class PostDetailViewModel : ViewModel() {
                     _uiState.update { it.copy(isLoadingComments = false) }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("PostDetailVM", "Error loading comments", e)
                 _uiState.update { it.copy(isLoadingComments = false) }
             }
         }

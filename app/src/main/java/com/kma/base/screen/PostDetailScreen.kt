@@ -120,12 +120,12 @@ fun PostDetailScreen(
                     )
                 }
 
-                // Divider
+                // Divider - use theme color for dark mode support
                 item {
                     HorizontalDivider(
                         modifier = Modifier.padding(vertical = 8.dp),
-                        thickness = 8.dp,
-                        color = LightGray
+                        thickness = 1.dp,  // Reduced thickness
+                        color = MaterialTheme.colorScheme.outlineVariant
                     )
                 }
 
@@ -297,7 +297,10 @@ private fun PostDetailContent(
             )
         }
 
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(vertical = 8.dp),
+            color = MaterialTheme.colorScheme.outlineVariant
+        )
 
         // Action buttons - only Like and Comment
         Row(
@@ -379,7 +382,7 @@ private fun CommentItem(
         Column(modifier = Modifier.weight(1f)) {
             // Comment bubble
             Surface(
-                color = LightGray,
+                color = MaterialTheme.colorScheme.surfaceVariant,
                 shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {

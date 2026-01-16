@@ -120,16 +120,21 @@ fun HomeScreen(
                         CreatePostCard(onClick = onCreatePostClick)
                     }
                     
-                    // Posts
+                    // Posts - filter out any posts with null id
+                    val validPosts = uiState.posts.filter { it.id != null }
                     items(
-                        items = uiState.posts,
-                        key = { it.id }
+                        items = validPosts,
+                        key = { it.id!! }  // Safe because we filtered above
                     ) { post ->
                         PostItem(
                             post = post,
-                            onClick = { onPostClick(post.id) },
-                            onLikeClick = { viewModel.toggleLike(post.id, post.userReaction != null) },
-                            onCommentClick = { onPostClick(post.id) }
+                            onClick = { post.id?.let { onPostClick(it) } },
+                            onLikeClick = { 
+                                post.id?.let { postId ->
+                                    viewModel.toggleLike(postId, post.userReaction != null) 
+                                }
+                            },
+                            onCommentClick = { post.id?.let { onPostClick(it) } }
                         )
                     }
                     

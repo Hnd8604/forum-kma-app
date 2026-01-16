@@ -24,6 +24,7 @@ object NavRoutes {
     const val GROUPS = "groups"
     const val CREATE_GROUP = "create_group"
     const val PROFILE = "profile/{userId}"
+    const val EDIT_PROFILE = "edit_profile"
     const val CHAT_DETAIL = "chat/{conversationId}/{conversationName}"
     
     fun postDetail(postId: String) = "post/$postId"
@@ -104,6 +105,9 @@ fun AppNavigation(
                 onNavigateToGroups = {
                     navController.navigate(NavRoutes.GROUPS)
                 },
+                onNavigateToEditProfile = {
+                    navController.navigate(NavRoutes.EDIT_PROFILE)
+                },
                 onNavigateToChatDetail = { conversationId, conversationName ->
                     navController.navigate(NavRoutes.chatDetail(conversationId, conversationName))
                 }
@@ -174,6 +178,14 @@ fun AppNavigation(
                     navController.popBackStack()
                     // TODO: Navigate to group detail
                 }
+            )
+        }
+        
+        // Edit Profile Screen
+        composable(NavRoutes.EDIT_PROFILE) {
+            EditProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onSaveSuccess = { navController.popBackStack() }
             )
         }
         

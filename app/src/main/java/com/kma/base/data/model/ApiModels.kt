@@ -177,8 +177,8 @@ data class PostResponse(
 )
 
 data class PostWithInteractionResponse(
-    @SerializedName("id")
-    val id: String,
+    @SerializedName("postId")  // Fixed: backend returns "postId", not "id"
+    val id: String? = null,  // Made nullable for safety with Gson deserialization
 
     @SerializedName("title")
     val title: String,
@@ -210,7 +210,7 @@ data class PostWithInteractionResponse(
     @SerializedName("commentCount")
     val commentCount: Int = 0,
 
-    @SerializedName("userReaction")
+    @SerializedName("userReactionType")  // Fixed: backend returns "userReactionType"
     val userReaction: String? = null,
 
     @SerializedName("createdAt")
