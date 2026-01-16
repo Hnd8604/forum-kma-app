@@ -192,6 +192,9 @@ data class PostWithInteractionResponse(
     @SerializedName("authorName")
     val authorName: String? = null,
 
+    @SerializedName("authorAvatarUrl")
+    val authorAvatarUrl: String? = null,
+
     @SerializedName("groupId")
     val groupId: String? = null,
 

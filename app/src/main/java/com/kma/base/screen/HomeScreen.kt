@@ -237,17 +237,6 @@ private fun CreatePostCard(onClick: () -> Unit) {
                     fontSize = 14.sp
                 )
             }
-            
-            Spacer(modifier = Modifier.width(8.dp))
-            
-            // Image icon
-            IconButton(onClick = onClick) {
-                Icon(
-                    Icons.Default.LocationOn,
-                    contentDescription = "Add Image",
-                    tint = Color(0xFF45BD62)
-                )
-            }
         }
     }
 }
@@ -273,18 +262,29 @@ private fun PostItem(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Avatar
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(PrimaryBlue),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = (post.authorName?.firstOrNull() ?: "U").toString().uppercase(),
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold
+                if (!post.authorAvatarUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = post.authorAvatarUrl,
+                        contentDescription = "Avatar",
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
                     )
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .size(40.dp)
+                            .clip(CircleShape)
+                            .background(PrimaryBlue),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = (post.authorName?.firstOrNull() ?: "U").toString().uppercase(),
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
                 
                 Spacer(modifier = Modifier.width(12.dp))
